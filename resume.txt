@@ -1,9 +1,37 @@
-Replace this file with your resume text or a plain skills/keywords summary.
-The matcher embeds this text and compares it against each job's title + description,
-so the more specific and keyword-rich it is, the better the matches.
-
-Example:
-DevOps and Cloud engineer. AWS ECS Fargate, ECR, ALB, IAM, VPC, CloudWatch.
-Docker multi-stage builds, GitLab CI/CD, GitHub Actions. Kubernetes, Terraform.
-Linux, Python, FastAPI, Node.js, Express, React, Next.js, PostgreSQL.
-Backend development, infrastructure automation, CI/CD pipelines, containerization.
+DAMANPREET SINGH
+📞 +91 8860961313 | ✉️ dpschawla13@gmail.com | LinkedIn | GitHub
+PROFESSIONAL SUMMARY
+DevOps-focused B.Tech student targeting DevOps Intern / Junior DevOps Engineer roles with hands-on
+experience deploying production-grade containerized MERN applications on AWS using ECS Fargate,
+Docker, and CI/CD pipelines. Strong understanding of AWS networking, IAM, automation, and system
+reliability.
+TECHNICAL SKILLS
+Cloud & DevOps: AWS (EC2, ECS Fargate, ECR, ALB, S3, IAM, CloudWatch)
+Containers & Orchestration: Docker, Docker Compose, Multi-stage Builds, Kubernetes (Foundational)
+CI/CD & VCS: Git, GitHub Actions, GitLab CI/CD
+OS & Scripting: Linux (Ubuntu), Windows, Bash
+Networking & Security: TCP/IP, DNS, HTTP/HTTPS, VPC, Security Groups, IAM
+Database & Monitoring: MongoDB Atlas, Amazon CloudWatch
+PROJECTS
+Production-Grade 3-Tier MERN Blog Platform – AWS ECS Fargate
+Tech: AWS (ECS Fargate, ECR, ALB, IAM, CloudWatch), Docker, GitLab CI/CD, Nginx
+Deployed a scalable 3-tier MERN application on AWS ECS Fargate
+Built optimized Docker images using multi-stage builds
+Include ALB Application Load Balancer
+Automated build and deployment via GitLab CI/CD → ECR → ECS services
+Implemented IAM roles, security groups, VPC networking, and CloudWatch logging
+Automated 3-Tier MERN Deployment on AWS
+Tech: AWS (EC2, S3, IAM), Docker, GitHub Actions
+Built fully automated CI/CD pipeline using GitHub Actions
+Hosted frontend on Amazon S3 and backend on EC2
+Reduced deployment time to under 2 minutes (~80% faster)
+Containerized 2-Tier MERN Application
+Tech: Docker, Docker Compose
+Designed multi-container MERN setup using Docker Compose
+Reduced image size from ~1.02 GB to ~200 MB using multi-stage builds
+EDUCATION
+B.Tech in Computer Science (Pursuing)
+Inderprastha Engineering College, Ghaziabad | 2027
+CERTIFICATIONS
+AWS Academy Graduate – Cloud Foundations
+Docker Fundamentals – TrainWithShubham
