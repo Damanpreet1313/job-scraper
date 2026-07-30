@@ -1,0 +1,9 @@
+Replace this file with your resume text or a plain skills/keywords summary.
+The matcher embeds this text and compares it against each job's title + description,
+so the more specific and keyword-rich it is, the better the matches.
+
+Example:
+DevOps and Cloud engineer. AWS ECS Fargate, ECR, ALB, IAM, VPC, CloudWatch.
+Docker multi-stage builds, GitLab CI/CD, GitHub Actions. Kubernetes, Terraform.
+Linux, Python, FastAPI, Node.js, Express, React, Next.js, PostgreSQL.
+Backend development, infrastructure automation, CI/CD pipelines, containerization.
