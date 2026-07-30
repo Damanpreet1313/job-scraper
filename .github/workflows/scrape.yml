@@ -1,0 +1,39 @@
+name: Scrape jobs
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run scraper
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          MATCH_THRESHOLD: ${{ vars.MATCH_THRESHOLD }}
+        run: python scripts/run_scrape.py
+
+      - name: Export matches to matches.txt
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/export_matches.py
+
+      - name: Commit results
+        run: |
+          git config user.name "job-scraper-bot"
+          git config user.email "actions@github.com"
+          git add matches.txt
+          if [ -f jobs.db ]; then git add jobs.db; fi
+          git diff --cached --quiet || git commit -m "Update matched jobs [skip ci]"
+          git push
