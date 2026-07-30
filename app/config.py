@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./jobs.db")
+DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./jobs.db"
 MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD") or "0.15")
 # --- Company/board seed list ---
 # board_slug is the identifier the ATS uses in its public API URL, NOT the
