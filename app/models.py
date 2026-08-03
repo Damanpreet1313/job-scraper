@@ -20,6 +20,7 @@ class Job(Base):
     content_hash = Column(String, unique=True, index=True, nullable=False)
 
     match_score = Column(Float, nullable=True)
+    match_reason = Column(Text, nullable=True)
     matched = Column(Boolean, default=False)
 
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -34,6 +35,7 @@ class Job(Base):
             "source": self.source,
             "posted_date": self.posted_date,
             "match_score": self.match_score,
+            "match_reason": self.match_reason,
             "matched": self.matched,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
