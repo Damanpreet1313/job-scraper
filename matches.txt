@@ -1,58 +1,58 @@
-Matched jobs — updated 2026-08-09 12:55 UTC
+Matched jobs — updated 2026-08-09 18:43 UTC
 Showing matches from the last 3 day(s). Total: 11
 ======================================================================
 
-[0.32] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
+[0.34] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/brightorder-full-stack-developer-devops-cloud-systems
 
-[0.26] Common Securitization Solutions — DevOps Engineer
+[0.27] Common Securitization Solutions — DevOps Engineer
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/common-securitization-solutions-devops-engineer
 
-[0.21] Carnival Corporation — Engineer Sr, DevOps
+[0.23] Carnival Corporation — Engineer Sr, DevOps
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/carnival-corporation-engineer-sr-devops
 
-[0.20] WME — Senior DevOps Engineer, Applications
+[0.21] WME — Senior DevOps Engineer, Applications
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/wme-senior-devops-engineer-applications
 
-[0.19] ProctorU — DevOps Engineer
+[0.20] ProctorU — DevOps Engineer
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/proctoru-devops-engineer
 
-[0.18] gitlab — Site Reliability Engineer - Dedicated Hosted Runners
+[0.19] gitlab — Site Reliability Engineer - Dedicated Hosted Runners
   Location: Bangalore, India
   Source:   greenhouse
   Link:     https://job-boards.greenhouse.io/gitlab/jobs/8644274002
 
-[0.18] ICF — Senior DevOps Engineer
+[0.19] ICF — Senior DevOps Engineer
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/icf-senior-devops-engineer
 
-[0.17] Leidos — OCI DevOps Engineer
+[0.18] Leidos — OCI DevOps Engineer
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/leidos-oci-devops-engineer
+
+[0.17] Five9 — Senior DevOps Engineer
+  Location: Remote
+  Source:   weworkremotely
+  Link:     https://weworkremotely.com/remote-jobs/five9-senior-devops-engineer
 
 [0.17] Avalon Administrative Services — DevOps Engineer III
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/avalon-administrative-services-devops-engineer-iii
 
-[0.16] Five9 — Senior DevOps Engineer
-  Location: Remote
-  Source:   weworkremotely
-  Link:     https://weworkremotely.com/remote-jobs/five9-senior-devops-engineer
-
-[0.16] Launch Legends — Senior DevOps Engineer (Web3)
+[0.17] Launch Legends — Senior DevOps Engineer (Web3)
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/launch-legends-senior-devops-engineer-web3
