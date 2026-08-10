@@ -11,7 +11,8 @@ and stores everything in a local (or hosted) database you can query via API.
    - Greenhouse & Lever & Ashby: public job-board APIs for individual companies (`app/config.py` seed list)
    - RemoteOK: public API, filtered by DevOps/Cloud keywords
    - WeWorkRemotely: RSS feed, already scoped to the DevOps/SysAdmin category
-   - Remotive & Jobicy: public no-auth job APIs, filtered by DevOps/Cloud keywords
+   - Remotive & Jobicy & Arbeitnow: public no-auth job APIs, filtered by DevOps/Cloud keywords
+   - Adzuna: search API (free key), defaults to India region where internships are listed
    Boards are fetched concurrently, so adding sources doesn't add linear runtime.
 2. **Dedupe**: each posting gets a hash of `company + title + url`, so
    re-running the scrape never inserts the same job twice.

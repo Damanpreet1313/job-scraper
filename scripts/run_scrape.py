@@ -29,7 +29,17 @@ from app.database import SessionLocal, init_db
 from app.llm_matcher import score_jobs
 from app.matcher import load_resume_text
 from app.models import Job
-from app.scrapers import ashby, greenhouse, jobicy, lever, remoteok, remotive, weworkremotely
+from app.scrapers import (
+    adzuna,
+    arbeitnow,
+    ashby,
+    greenhouse,
+    jobicy,
+    lever,
+    remoteok,
+    remotive,
+    weworkremotely,
+)
 
 # source -> (list of board slugs, fetch callable)
 SOURCE_SCRAPERS = {
@@ -40,6 +50,8 @@ SOURCE_SCRAPERS = {
     "weworkremotely": ([None], weworkremotely.fetch_jobs),
     "remotive": ([None], remotive.fetch_jobs),
     "jobicy": ([None], jobicy.fetch_jobs),
+    "arbeitnow": ([None], arbeitnow.fetch_jobs),
+    "adzuna": ([None], adzuna.fetch_jobs),
 }
 
 
