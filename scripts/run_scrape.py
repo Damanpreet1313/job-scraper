@@ -3,70 +3,68 @@ Run the full scrape -> dedupe -> match -> store pipeline.
 
 Usage:
     python scripts/run_scrape.py
+    python scripts/run_scrape.py --source remoteok,weworkremotely,remotive,jobicy
+
+Sources are fetched concurrently to cut wall-clock time, then deduped,
+scored against resume.txt, and stored.
 """
+import argparse
 import sys
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.config import (
+    ASHBY_BOARDS,
     GREENHOUSE_BOARDS,
     LEVER_BOARDS,
-    ASHBY_BOARDS,
-    MATCH_THRESHOLD,
-    MATCH_RETENTION_DAYS,
     GROQ_API_KEY,
     GROQ_MODEL,
+    MATCH_RETENTION_DAYS,
+    MATCH_THRESHOLD,
 )
 from app.database import SessionLocal, init_db
-from app.models import Job
 from app.llm_matcher import score_jobs
 from app.matcher import load_resume_text
-from app.scrapers import greenhouse, lever, ashby, remoteok, weworkremotely
+from app.models import Job
+from app.scrapers import ashby, greenhouse, jobicy, lever, remoteok, remotive, weworkremotely
+
+# source -> (list of board slugs, fetch callable)
+SOURCE_SCRAPERS = {
+    "greenhouse": (GREENHOUSE_BOARDS, greenhouse.fetch_jobs),
+    "lever": (LEVER_BOARDS, lever.fetch_jobs),
+    "ashby": (ASHBY_BOARDS, ashby.fetch_jobs),
+    "remoteok": ([None], remoteok.fetch_jobs),
+    "weworkremotely": ([None], weworkremotely.fetch_jobs),
+    "remotive": ([None], remotive.fetch_jobs),
+    "jobicy": ([None], jobicy.fetch_jobs),
+}
 
 
-def collect_all_jobs() -> list[dict]:
+def fetch_one(source: str, slug: str | None, fetcher) -> list[dict]:
+    """Fetch one board (or one global source when slug is None)."""
+    label = f"{source}/{slug}" if slug else source
+    try:
+        fetched = fetcher(slug) if slug else fetcher()
+        print(f"  {label}: {len(fetched)} jobs")
+        return fetched
+    except Exception as e:
+        print(f"  {label} failed: {e}")
+        return []
+
+
+def collect_all_jobs(sources: list[str], max_workers: int = 8) -> list[dict]:
     jobs = []
-
-    for slug in GREENHOUSE_BOARDS:
-        try:
-            fetched = greenhouse.fetch_jobs(slug)
-            print(f"  greenhouse/{slug}: {len(fetched)} jobs")
-            jobs.extend(fetched)
-        except Exception as e:
-            print(f"  greenhouse/{slug} failed: {e}")
-
-    for slug in LEVER_BOARDS:
-        try:
-            fetched = lever.fetch_jobs(slug)
-            print(f"  lever/{slug}: {len(fetched)} jobs")
-            jobs.extend(fetched)
-        except Exception as e:
-            print(f"  lever/{slug} failed: {e}")
-
-    for slug in ASHBY_BOARDS:
-        try:
-            fetched = ashby.fetch_jobs(slug)
-            print(f"  ashby/{slug}: {len(fetched)} jobs")
-            jobs.extend(fetched)
-        except Exception as e:
-            print(f"  ashby/{slug} failed: {e}")
-
-    try:
-        fetched = remoteok.fetch_jobs()
-        print(f"  remoteok: {len(fetched)} jobs")
-        jobs.extend(fetched)
-    except Exception as e:
-        print(f"  remoteok failed: {e}")
-
-    try:
-        fetched = weworkremotely.fetch_jobs()
-        print(f"  weworkremotely: {len(fetched)} jobs")
-        jobs.extend(fetched)
-    except Exception as e:
-        print(f"  weworkremotely failed: {e}")
-
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = []
+        for source in sources:
+            slugs, fetcher = SOURCE_SCRAPERS[source]
+            for slug in slugs:
+                futures.append(pool.submit(fetch_one, source, slug, fetcher))
+        for future in as_completed(futures):
+            jobs.extend(future.result())
     return jobs
 
 
@@ -118,6 +116,20 @@ def store_jobs(jobs: list[dict]) -> tuple[int, int]:
 
 
 def main():
+    parser = argparse.ArgumentParser(description="Scrape, dedupe, score, and store DevOps/Cloud jobs.")
+    parser.add_argument(
+        "--source",
+        help="Comma-separated sources to scrape (default: all). "
+        f"Options: {', '.join(SOURCE_SCRAPERS)}",
+    )
+    parser.add_argument("--workers", type=int, default=8, help="Max concurrent fetches (default: 8)")
+    args = parser.parse_args()
+
+    sources = [s.strip() for s in args.source.split(",")] if args.source else list(SOURCE_SCRAPERS)
+    unknown = [s for s in sources if s not in SOURCE_SCRAPERS]
+    if unknown:
+        parser.error(f"Unknown source(s): {', '.join(unknown)}")
+
     init_db()
 
     purged = purge_old_jobs()
@@ -129,7 +141,7 @@ def main():
         print("Matcher: TF-IDF only (no GROQ_API_KEY set)")
 
     print("Scraping sources...")
-    jobs = collect_all_jobs()
+    jobs = collect_all_jobs(sources, max_workers=args.workers)
     print(f"Total raw postings fetched: {len(jobs)}")
 
     resume_text = load_resume_text()

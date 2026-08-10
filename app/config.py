@@ -25,18 +25,19 @@ GREENHOUSE_BOARDS = [
     "gitlab",
     "stripe",
     "cloudflare",
-    "hashicorp",
     "datadog",
+    "mongodb",
+    "elastic",
 ]
 
 LEVER_BOARDS = [
-    "netflix",
-    "figma",
+    "palantir",
 ]
 
 ASHBY_BOARDS = [
     "ramp",
     "linear",
+    "notion",
 ]
 
 # Keyword filters applied to remote job boards (RemoteOK, WWR) since those

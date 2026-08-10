@@ -23,7 +23,7 @@ def health():
 @app.get("/jobs")
 def list_jobs(
     matched_only: bool = Query(False, description="Only return jobs above the match threshold"),
-    source: Optional[str] = Query(None, description="Filter by source: greenhouse, lever, ashby, remoteok, weworkremotely"),
+    source: Optional[str] = Query(None, description="Filter by source: greenhouse, lever, ashby, remoteok, weworkremotely, remotive, jobicy"),
     min_score: Optional[float] = Query(None, ge=0, le=1),
     limit: int = Query(50, le=500),
     offset: int = 0,

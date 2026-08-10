@@ -11,13 +11,14 @@ and stores everything in a local (or hosted) database you can query via API.
    - Greenhouse & Lever & Ashby: public job-board APIs for individual companies (`app/config.py` seed list)
    - RemoteOK: public API, filtered by DevOps/Cloud keywords
    - WeWorkRemotely: RSS feed, already scoped to the DevOps/SysAdmin category
+   - Remotive & Jobicy: public no-auth job APIs, filtered by DevOps/Cloud keywords
+   Boards are fetched concurrently, so adding sources doesn't add linear runtime.
 2. **Dedupe**: each posting gets a hash of `company + title + url`, so
    re-running the scrape never inserts the same job twice.
-3. **Matching**: `app/matcher.py` uses TF-IDF + cosine similarity between
-   `resume.txt` and each job's title/description. Fast, no model download.
-   Swap in sentence-transformers embeddings later (same pattern as Vizzy-2)
-   if you want semantic rather than keyword matching — only `matcher.py`
-   needs to change.
+3. **Matching**: `app/matcher.py` TF-IDF ranks every job first (fast, no API
+   calls). If a `GROQ_API_KEY` is set, `app/llm_matcher.py` then re-scores the
+   top candidates with Groq for a sharper semantic match plus a one-line
+   reason; without a key it falls back to pure TF-IDF.
 4. **Storage**: SQLAlchemy, SQLite by default, one env var away from Postgres.
 5. **API**: FastAPI app to query/filter results.
 
@@ -41,10 +42,14 @@ directly in a browser, then add the companies you actually care about.
 
 ```bash
 python scripts/run_scrape.py
+# or a subset of sources:
+python scripts/run_scrape.py --source remoteok,remotive,jobicy
+# control fetch concurrency:
+python scripts/run_scrape.py --workers 4
 ```
 
-This fetches all sources, dedupes against what's already stored, scores
-against `resume.txt`, and prints a summary.
+This fetches all sources (concurrently), dedupes against what's already
+stored, scores against `resume.txt`, and prints a summary.
 
 ## Query results
 
@@ -84,6 +89,6 @@ calls, so these run offline/in CI without hitting live job boards.
 - Add more Greenhouse/Lever/Ashby companies in `app/config.py`.
 - Add a new source by writing a `fetch_jobs()` function in
   `app/scrapers/` that returns a list of `normalize_job(...)` dicts, then
-  wire it into `scripts/run_scrape.py`'s `collect_all_jobs()`.
+  wire it into `scripts/run_scrape.py`'s `SOURCE_SCRAPERS`.
 - Swap TF-IDF for embeddings in `app/matcher.py` if keyword matching isn't
   precise enough.

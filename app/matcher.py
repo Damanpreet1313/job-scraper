@@ -1,3 +1,4 @@
+from functools import lru_cache
 from pathlib import Path
 
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -6,6 +7,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 RESUME_PATH = Path(__file__).resolve().parent.parent / "resume.txt"
 
 
+@lru_cache(maxsize=1)
 def load_resume_text() -> str:
     if not RESUME_PATH.exists():
         return ""
