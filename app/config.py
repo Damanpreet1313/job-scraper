@@ -47,20 +47,114 @@ ASHBY_BOARDS = [
     "notion",
 ]
 
-# Keyword filters applied to remote job boards (RemoteOK, WWR, Arbeitnow,
-# Remotive, Jobicy, Adzuna) since those aggregate every category, not just
-# DevOps/Cloud. "intern"/"trainee"/"fresher" catch entry-level roles that
-# don't mention a cloud keyword in the title but match a junior job search.
-REMOTE_KEYWORDS = [
+# DevOps/Cloud role keywords — match against job TITLE only (not description)
+# to avoid false positives from company boilerplate text.
+DEVOPS_KEYWORDS = [
     "devops",
     "cloud",
     "sre",
+    "site reliability",
     "platform engineer",
     "infrastructure",
     "kubernetes",
     "terraform",
+    "docker",
+    "aws",
+    "azure",
+    "gcp",
+    "ci/cd",
+    "cicd",
+    "jenkins",
+    "gitlab ci",
+    "github actions",
+    "argocd",
+    "flux",
+    "helm",
+    "ansible",
+    "prometheus",
+    "grafana",
+    "observability",
+    "reliability engineer",
+    "production engineer",
+    "systems engineer",
+    "network engineer",
+    "security engineer",
+    "devsecops",
+]
+
+# Junior/Entry-level/Internship keywords — match against job TITLE only
+JUNIOR_KEYWORDS = [
     "intern",
     "trainee",
     "fresher",
     "graduate",
+    "junior",
+    "entry",
+    "entry-level",
+    "entry level",
+    "associate",
+    "apprentice",
+    "co-op",
+    "coop",
+    "student",
+    "new grad",
+    "new-grad",
+]
+
+# Keyword filters applied to remote job boards (RemoteOK, WWR, Arbeitnow,
+# Remotive, Jobicy, Adzuna) since those aggregate every category, not just
+# DevOps/Cloud. Used for title+tags filtering.
+REMOTE_KEYWORDS = DEVOPS_KEYWORDS + JUNIOR_KEYWORDS
+
+# --- Company/board seed list ---
+# board_slug is the identifier the ATS uses in its public API URL, NOT the
+# company's display name. Slugs drift and companies switch ATS providers,
+# so treat this as a starting point — verify each slug still resolves
+# (open the URL pattern in the relevant scraper file) and add your own.
+GREENHOUSE_BOARDS = [
+    "gitlab",
+    "stripe",
+    "cloudflare",
+    "datadog",
+    "mongodb",
+    "elastic",
+]
+
+LEVER_BOARDS = [
+    "palantir",
+]
+
+ASHBY_BOARDS = [
+    "ramp",
+    "linear",
+    "notion",
+]
+
+# Startup-focused boards (smaller companies, earlier stage)
+# These are in addition to the main boards above
+STARTUP_GREENHOUSE_BOARDS = [
+    "vercel",
+    "planetscale",
+    "supabase",
+    "railway",
+    "render",
+    "flyio",
+    "temporal",
+    "dagster",
+    "prefect",
+    "dagster-io",
+]
+
+STARTUP_LEVER_BOARDS = [
+    "vercel",
+    "planetscale",
+    "supabase",
+    "railway",
+]
+
+STARTUP_ASHBY_BOARDS = [
+    "linear",
+    "notion",
+    "temporal",
+    "prefect",
 ]
