@@ -56,3 +56,8 @@ Showing matches from the last 3 day(s). Total: 11
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/launch-legends-senior-devops-engineer-web3
+
+[0.16] Audif1 — Cloud & AI System Engineer
+  Location: Bicester United Kingdom
+  Source:   arbeitnow
+  Link:     https://www.arbeitnow.co.uk/jobs/companies/audif1/cloud-ai-system-engineer-bicester-united-kingdom-106588
