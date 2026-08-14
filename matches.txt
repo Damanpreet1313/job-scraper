@@ -1,5 +1,5 @@
-Matched jobs — updated 2026-08-14 13:11 UTC
-Showing matches from the last 3 day(s). Total: 5
+Matched jobs — updated 2026-08-14 18:57 UTC
+Showing matches from the last 3 day(s). Total: 6
 ======================================================================
 
 [0.23] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
@@ -21,6 +21,11 @@ Showing matches from the last 3 day(s). Total: 5
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/wme-senior-devops-engineer-applications
+
+[0.15] Hypofriend GmbH — Senior Ruby Backend Engineer with affinity for observability (d/w/m)
+  Location: Berlin
+  Source:   arbeitnow
+  Link:     https://www.arbeitnow.com/jobs/companies/hypofriend-gmbh/senior-ruby-backend-engineer-with-affinity-for-observability-berlin-497601
 
 [0.15] gitlab — Site Reliability Engineer - Dedicated Hosted Runners
   Location: Bangalore, India
