@@ -1,11 +1,16 @@
-Matched jobs — updated 2026-08-16 12:42 UTC
-Showing matches from the last 3 day(s). Total: 4
+Matched jobs — updated 2026-08-16 18:31 UTC
+Showing matches from the last 3 day(s). Total: 5
 ======================================================================
 
 [0.24] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/brightorder-full-stack-developer-devops-cloud-systems
+
+[0.16] ecosio — Site Reliability Engineer (f/m/d)
+  Location: Austria,  Germany
+  Source:   jobicy
+  Link:     https://jobicy.com/jobs/150847-site-reliability-engineer-f-m-d
 
 [0.16] gitlab — Site Reliability Engineer - Dedicated Hosted Runners
   Location: Bangalore, India
