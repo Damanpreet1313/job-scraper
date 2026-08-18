@@ -1,11 +1,16 @@
-Matched jobs — updated 2026-08-18 06:46 UTC
-Showing matches from the last 3 day(s). Total: 4
+Matched jobs — updated 2026-08-18 12:50 UTC
+Showing matches from the last 3 day(s). Total: 5
 ======================================================================
 
 [0.24] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
   Location: Remote
   Source:   weworkremotely
   Link:     https://weworkremotely.com/remote-jobs/brightorder-full-stack-developer-devops-cloud-systems
+
+[0.17] Kryptos Technologies limited — AWS Security & Cloud Platform Consultant
+  Location: London
+  Source:   arbeitnow
+  Link:     https://www.arbeitnow.co.uk/jobs/companies/kryptos-technologies-limited/aws-security-cloud-platform-consultant-london-227558
 
 [0.16] ecosio — Site Reliability Engineer (f/m/d)
   Location: Austria,  Germany
