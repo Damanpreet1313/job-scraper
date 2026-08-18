@@ -1,5 +1,5 @@
-Matched jobs — updated 2026-08-17 18:42 UTC
-Showing matches from the last 3 day(s). Total: 5
+Matched jobs — updated 2026-08-18 01:20 UTC
+Showing matches from the last 3 day(s). Total: 4
 ======================================================================
 
 [0.24] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
@@ -16,11 +16,6 @@ Showing matches from the last 3 day(s). Total: 5
   Location: Bangalore, India
   Source:   greenhouse
   Link:     https://job-boards.greenhouse.io/gitlab/jobs/8644274002
-
-[0.15] Hypofriend GmbH — Senior Ruby Backend Engineer with affinity for observability (d/w/m)
-  Location: Berlin
-  Source:   arbeitnow
-  Link:     https://www.arbeitnow.com/jobs/companies/hypofriend-gmbh/senior-ruby-backend-engineer-with-affinity-for-observability-berlin-497601
 
 [0.15] Leidos — OCI DevOps Engineer
   Location: Remote
