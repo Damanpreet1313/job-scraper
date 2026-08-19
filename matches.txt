@@ -1,5 +1,5 @@
-Matched jobs — updated 2026-08-19 12:51 UTC
-Showing matches from the last 3 day(s). Total: 3
+Matched jobs — updated 2026-08-19 18:38 UTC
+Showing matches from the last 3 day(s). Total: 2
 ======================================================================
 
 [0.24] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
@@ -11,8 +11,3 @@ Showing matches from the last 3 day(s). Total: 3
   Location: London
   Source:   arbeitnow
   Link:     https://www.arbeitnow.co.uk/jobs/companies/kryptos-technologies-limited/aws-security-cloud-platform-consultant-london-227558
-
-[0.16] ecosio — Site Reliability Engineer (f/m/d)
-  Location: Austria,  Germany
-  Source:   jobicy
-  Link:     https://jobicy.com/jobs/150847-site-reliability-engineer-f-m-d
