@@ -1,5 +1,5 @@
-Matched jobs — updated 2026-08-19 01:21 UTC
-Showing matches from the last 3 day(s). Total: 5
+Matched jobs — updated 2026-08-19 06:47 UTC
+Showing matches from the last 3 day(s). Total: 3
 ======================================================================
 
 [0.24] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
@@ -16,13 +16,3 @@ Showing matches from the last 3 day(s). Total: 5
   Location: Austria,  Germany
   Source:   jobicy
   Link:     https://jobicy.com/jobs/150847-site-reliability-engineer-f-m-d
-
-[0.16] gitlab — Site Reliability Engineer - Dedicated Hosted Runners
-  Location: Bangalore, India
-  Source:   greenhouse
-  Link:     https://job-boards.greenhouse.io/gitlab/jobs/8644274002
-
-[0.15] Leidos — OCI DevOps Engineer
-  Location: Remote
-  Source:   weworkremotely
-  Link:     https://weworkremotely.com/remote-jobs/leidos-oci-devops-engineer
