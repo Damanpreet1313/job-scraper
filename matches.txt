@@ -1,5 +1,5 @@
-Matched jobs — updated 2026-08-21 06:50 UTC
-Showing matches from the last 3 day(s). Total: 4
+Matched jobs — updated 2026-08-21 12:52 UTC
+Showing matches from the last 3 day(s). Total: 3
 ======================================================================
 
 [0.33] Berlitz — Senior Platform & DevOps Engineer
@@ -16,8 +16,3 @@ Showing matches from the last 3 day(s). Total: 4
   Location: LATAM
   Source:   jobicy
   Link:     https://jobicy.com/jobs/151148-devops-engineer
-
-[0.17] Kryptos Technologies limited — AWS Security & Cloud Platform Consultant
-  Location: London
-  Source:   arbeitnow
-  Link:     https://www.arbeitnow.co.uk/jobs/companies/kryptos-technologies-limited/aws-security-cloud-platform-consultant-london-227558
