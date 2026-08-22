@@ -1,16 +1,11 @@
-Matched jobs — updated 2026-08-22 06:42 UTC
-Showing matches from the last 3 day(s). Total: 3
+Matched jobs — updated 2026-08-22 12:42 UTC
+Showing matches from the last 3 day(s). Total: 2
 ======================================================================
 
 [0.33] Berlitz — Senior Platform & DevOps Engineer
   Location: Germany Remote
   Source:   arbeitnow
   Link:     https://www.arbeitnow.com/jobs/companies/berlitz/remote-senior-platform-devops-engineer-333753
-
-[0.24] BrightOrder — Full Stack Developer - DevOps & Cloud Systems
-  Location: Remote
-  Source:   weworkremotely
-  Link:     https://weworkremotely.com/remote-jobs/brightorder-full-stack-developer-devops-cloud-systems
 
 [0.20] Launchpad Technologies — DevOps Engineer
   Location: LATAM
