@@ -1,13 +1,8 @@
-Matched jobs — updated 2026-08-22 18:33 UTC
-Showing matches from the last 3 day(s). Total: 2
+Matched jobs — updated 2026-08-23 01:27 UTC
+Showing matches from the last 3 day(s). Total: 1
 ======================================================================
 
 [0.33] Berlitz — Senior Platform & DevOps Engineer
   Location: Germany Remote
   Source:   arbeitnow
   Link:     https://www.arbeitnow.com/jobs/companies/berlitz/remote-senior-platform-devops-engineer-333753
-
-[0.20] Launchpad Technologies — DevOps Engineer
-  Location: LATAM
-  Source:   jobicy
-  Link:     https://jobicy.com/jobs/151148-devops-engineer
