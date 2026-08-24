@@ -3,7 +3,7 @@ import requests
 from app.config import DEVOPS_KEYWORDS, JUNIOR_KEYWORDS, SENIOR_EXCLUSION_KEYWORDS
 from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior
-from app.scrapers.locations import is_location_allowed
+import app.scrapers.locations as locations
 
 BASE_URL = "https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true"
 
@@ -42,7 +42,7 @@ def fetch_jobs(slug: str, timeout: int = 15) -> list[dict]:
             continue
         location = (item.get("location") or {}).get("name")
         description = item.get("content", "")
-        allowed, reason = is_location_allowed(location, description)
+        allowed, reason = locations.is_location_allowed(location, description)
         if not allowed:
             continue
         jobs.append(

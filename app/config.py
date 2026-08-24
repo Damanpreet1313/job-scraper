@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./jobs.db"
-MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD") or "0.15")
+MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD") or "0.02")
 
 # Optional: if set, matching uses Groq for a sharper semantic score on top of
 # the TF-IDF pre-filter. If unset, matching silently falls back to TF-IDF only.
@@ -56,6 +56,22 @@ DEVOPS_KEYWORDS = [
     "network engineer",
     "security engineer",
     "devsecops",
+    # Additional keywords for junior/adjacent roles:
+    "backend engineer",
+    "software engineer",
+    "systems engineer",
+    "infrastructure engineer",
+    "platform engineer",
+    "reliability engineer",
+    "build engineer",
+    "release engineer",
+    "deployment engineer",
+    "cloud engineer",
+    "k8s",
+    "cloudformation",
+    "pulumi",
+    "observability",
+    "monitoring",
 ]
 
 # Junior/Entry-level/Internship keywords — match against job TITLE only
@@ -76,6 +92,20 @@ JUNIOR_KEYWORDS = [
     "student",
     "new grad",
     "new-grad",
+    # Additional keywords for real-world junior titles:
+    "associate",
+    "level 1",
+    "level 2",
+    "l1",
+    "l2",
+    "e1",
+    "e2",
+    "e3",
+    "early career",
+    "early-career",
+    "0-1 year",
+    "0-2 years",
+    "1-2 years",
 ]
 
 # Senior/Lead/Principal/Staff keywords — EXCLUDE these from results

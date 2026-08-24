@@ -3,7 +3,7 @@ import requests
 from app.config import DEVOPS_KEYWORDS, JUNIOR_KEYWORDS, SENIOR_EXCLUSION_KEYWORDS
 from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior
-from app.scrapers.locations import is_location_allowed
+import app.scrapers.locations as locations
 
 BASE_URL = "https://api.lever.co/v0/postings/{slug}?mode=json"
 
@@ -43,7 +43,7 @@ def fetch_jobs(slug: str, timeout: int = 15) -> list[dict]:
         categories = item.get("categories", {})
         description = item.get("descriptionPlain") or item.get("description", "")
         location = categories.get("location")
-        allowed, reason = is_location_allowed(location, description)
+        allowed, reason = locations.is_location_allowed(location, description)
         if not allowed:
             continue
         jobs.append(

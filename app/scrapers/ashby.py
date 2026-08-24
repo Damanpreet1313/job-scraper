@@ -3,7 +3,7 @@ import requests
 from app.config import DEVOPS_KEYWORDS, JUNIOR_KEYWORDS, SENIOR_EXCLUSION_KEYWORDS
 from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior
-from app.scrapers.locations import is_location_allowed
+import app.scrapers.locations as locations
 
 BASE_URL = "https://api.ashbyhq.com/posting-api/job-board/{slug}"
 
@@ -44,7 +44,7 @@ def fetch_jobs(slug: str, timeout: int = 15) -> list[dict]:
             continue
         location = item.get("location") or item.get("locationName")
         description = item.get("descriptionPlain") or item.get("description", "")
-        allowed, reason = is_location_allowed(location, description)
+        allowed, reason = locations.is_location_allowed(location, description)
         if not allowed:
             continue
         jobs.append(

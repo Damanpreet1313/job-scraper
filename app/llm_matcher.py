@@ -6,7 +6,15 @@ import requests
 
 from app.config import GROQ_API_KEY, GROQ_MODEL
 from app.matcher import score_jobs as score_jobs_tfidf
-from app.semantic_matcher import score_jobs_semantic, score_jobs_hybrid
+
+# Optional semantic matching - only import if sentence-transformers is installed
+try:
+    from app.semantic_matcher import score_jobs_semantic
+    SEMANTIC_AVAILABLE = True
+except ImportError:
+    SEMANTIC_AVAILABLE = False
+    def score_jobs_semantic(jobs, resume_text):
+        return jobs
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
