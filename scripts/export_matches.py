@@ -7,6 +7,7 @@ no server or local pull needed.
 Usage:
     python scripts/export_matches.py
 """
+import shutil
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +19,7 @@ from app.database import SessionLocal, init_db
 from app.models import Job
 
 OUTPUT_PATH = Path(__file__).resolve().parent.parent / "matches.txt"
+DOCS_PATH = Path(__file__).resolve().parent.parent / "docs" / "matches.txt"
 
 
 def export():
@@ -52,8 +54,14 @@ def export():
             lines.append(f"  Link:     {job.url}")
             lines.append("")
 
-        OUTPUT_PATH.write_text("\n".join(lines), encoding="utf-8")
-        print(f"Wrote {len(jobs)} matched jobs to {OUTPUT_PATH}")
+        content = "\n".join(lines)
+        OUTPUT_PATH.write_text(content, encoding="utf-8")
+        
+        # Also write to docs/ for GitHub Pages
+        DOCS_PATH.parent.mkdir(exist_ok=True)
+        DOCS_PATH.write_text(content, encoding="utf-8")
+        
+        print(f"Wrote {len(jobs)} matched jobs to {OUTPUT_PATH} and {DOCS_PATH}")
     finally:
         db.close()
 

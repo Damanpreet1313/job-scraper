@@ -1,10 +1,12 @@
 import json
+import os
 import re
 
 import requests
 
 from app.config import GROQ_API_KEY, GROQ_MODEL
 from app.matcher import score_jobs as score_jobs_tfidf
+from app.semantic_matcher import score_jobs_semantic, score_jobs_hybrid
 
 GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
@@ -64,15 +66,30 @@ def _score_one(resume_text: str, job: dict, timeout: int = 20) -> tuple[float | 
         return None, f"llm scoring unavailable ({type(e).__name__})"
 
 
-def score_jobs(jobs: list[dict], resume_text: str, candidate_pool: int = 40) -> list[dict]:
-    """Two-stage matching: TF-IDF ranks every job first (cheap, no API
-    calls), then only the top `candidate_pool` jobs get sent to Groq for a
-    sharper semantic score + a one-line reason. Keeps API usage bounded
-    regardless of how many postings a run scrapes. Falls back to pure
-    TF-IDF entirely if no GROQ_API_KEY is set.
+def score_jobs(
+    jobs: list[dict],
+    resume_text: str,
+    candidate_pool: int = 40,
+    use_semantic: bool = True,
+) -> list[dict]:
+    """Three-stage matching:
+    1. TF-IDF ranks every job (cheap, no API calls)
+    2. Sentence-transformers semantic embeddings (local, no API) for better matching
+    3. Top `candidate_pool` jobs get sent to Groq for sharpest score + reason
+    
+    Falls back gracefully: semantic -> TF-IDF, Groq -> semantic.
     """
-    jobs = score_jobs_tfidf(jobs, resume_text)  # every job gets a baseline tfidf match_score
-
+    # Stage 1: TF-IDF baseline
+    jobs = score_jobs_tfidf(jobs, resume_text)
+    
+    # Stage 2: Semantic embeddings (sentence-transformers) - local, fast
+    if use_semantic:
+        try:
+            jobs = score_jobs_semantic(jobs, resume_text)
+        except Exception as e:
+            print(f"Semantic matching failed ({e}), keeping TF-IDF scores")
+    
+    # Stage 3: Groq LLM for top candidates (if API key available)
     if not GROQ_API_KEY or not jobs:
         for job in jobs:
             job.setdefault("match_reason", None)
@@ -88,6 +105,6 @@ def score_jobs(jobs: list[dict], resume_text: str, candidate_pool: int = 40) -> 
         score, reason = _score_one(resume_text, job)
         job["match_reason"] = reason
         if score is not None:
-            job["match_score"] = score  # replace tfidf score with Groq's sharper one
+            job["match_score"] = score  # replace with Groq's sharper score
 
     return jobs

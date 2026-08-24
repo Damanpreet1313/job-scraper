@@ -1,43 +1,73 @@
-name: Scrape jobs
+name: Daily Job Scrape (Every 6 Hours)
 
 on:
   schedule:
-    - cron: "0 */6 * * *"
-  workflow_dispatch: {}
+    # Runs at 0:00, 6:00, 12:00, 18:00 UTC
+    - cron: '0 */6 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+permissions:
+  contents: write  # Needed to push matches.txt to gh-pages
 
 jobs:
   scrape:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 60
 
-      - uses: actions/setup-python@v5
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
-          python-version: "3.11"
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          # Pre-download embedding model to cache
+          python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
       - name: Run scraper
         env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          MATCH_THRESHOLD: ${{ vars.MATCH_THRESHOLD }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: ${{ vars.GROQ_MODEL }}
-        run: python scripts/run_scrape.py
-
-      - name: Export matches to matches.txt
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: ${{ vars.GROQ_MODEL }}
-        run: python scripts/export_matches.py
-
-      - name: Commit results
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          ADZUNA_REGION: ${{ secrets.ADZUNA_REGION }}
+          MATCH_THRESHOLD: ${{ secrets.MATCH_THRESHOLD }}
+          MATCH_RETENTION_DAYS: ${{ secrets.MATCH_RETENTION_DAYS }}
         run: |
-          git config user.name "job-scraper-bot"
-          git config user.email "actions@github.com"
-          git add matches.txt
-          if [ -f jobs.db ]; then git add jobs.db; fi
-          git diff --cached --quiet || git commit -m "Update matched jobs [skip ci]"
-          git push
+          python scripts/run_scrape.py --workers 6
+
+      - name: Export matches
+        run: |
+          python scripts/export_matches.py
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        if: github.ref == 'refs/heads/main'
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .
+          publish_branch: gh-pages
+          keep_files: true
+          force_orphan: true
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
+          commit_message: 'Update matches.txt [skip ci]'
+
+      - name: Summary
+        run: |
+          echo "## Scrape Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Date**: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          if [ -f matches.txt ]; then
+            MATCH_COUNT=$(grep -c "^\[" matches.txt || echo 0)
+            echo "- **Matched Jobs**: $MATCH_COUNT" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### Top 10 Matches" >> $GITHUB_STEP_SUMMARY
+            head -30 matches.txt >> $GITHUB_STEP_SUMMARY
+          fi

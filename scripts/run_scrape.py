@@ -32,38 +32,47 @@ from app.database import SessionLocal, init_db
 from app.llm_matcher import score_jobs
 from app.matcher import load_resume_text
 from app.models import Job
-from app.scrapers import (
-    adzuna,
-    arbeitnow,
-    ashby,
-    greenhouse,
-    himalayas,
-    jobicy,
-    lever,
-    remoteok,
-    remoteco,
-    remotive,
-    weworkremotely,
-    ycombinator,
-)
+from app.scrapers.adzuna import fetch_jobs as adzuna_fetch
+from app.scrapers.arbeitnow import fetch_jobs as arbeitnow_fetch
+from app.scrapers.ashby import fetch_jobs as ashby_fetch
+from app.scrapers.career_pages import fetch_jobs as career_pages_fetch
+from app.scrapers.greenhouse import fetch_jobs as greenhouse_fetch
+from app.scrapers.himalayas import fetch_jobs as himalayas_fetch
+from app.scrapers.indeed import fetch_jobs as indeed_fetch
+from app.scrapers.jobicy import fetch_jobs as jobicy_fetch
+from app.scrapers.lever import fetch_jobs as lever_fetch
+from app.scrapers.levels_fyi import fetch_jobs as levels_fyi_fetch
+from app.scrapers.linkedin import fetch_jobs as linkedin_fetch
+from app.scrapers.otta import fetch_jobs as ota_fetch
+from app.scrapers.remoteok import fetch_jobs as remoteok_fetch
+from app.scrapers.remoteco import fetch_jobs as remoteco_fetch
+from app.scrapers.remotive import fetch_jobs as remotive_fetch
+from app.scrapers.weworkremotely import fetch_jobs as weworkremotely_fetch
+from app.scrapers.wellfound import fetch_jobs as wellfound_fetch
+from app.scrapers.ycombinator import fetch_jobs as ycombinator_fetch
 
 # source -> (list of board slugs, fetch callable)
 SOURCE_SCRAPERS = {
-    "greenhouse": (GREENHOUSE_BOARDS, greenhouse.fetch_jobs),
-    "lever": (LEVER_BOARDS, lever.fetch_jobs),
-    "ashby": (ASHBY_BOARDS, ashby.fetch_jobs),
-    "startup_greenhouse": (STARTUP_GREENHOUSE_BOARDS, greenhouse.fetch_jobs),
-    "startup_lever": (STARTUP_LEVER_BOARDS, lever.fetch_jobs),
-    "startup_ashby": (STARTUP_ASHBY_BOARDS, ashby.fetch_jobs),
-    "remoteok": ([None], remoteok.fetch_jobs),
-    "weworkremotely": ([None], weworkremotely.fetch_jobs),
-    "remotive": ([None], remotive.fetch_jobs),
-    "jobicy": ([None], jobicy.fetch_jobs),
-    "arbeitnow": ([None], arbeitnow.fetch_jobs),
-    "adzuna": ([None], adzuna.fetch_jobs),
-    "ycombinator": ([None], ycombinator.fetch_jobs),
-    "remoteco": ([None], remoteco.fetch_jobs),
-    "himalayas": ([None], himalayas.fetch_jobs),
+    "greenhouse": (GREENHOUSE_BOARDS, greenhouse_fetch),
+    "lever": (LEVER_BOARDS, lever_fetch),
+    "ashby": (ASHBY_BOARDS, ashby_fetch),
+    "startup_greenhouse": (STARTUP_GREENHOUSE_BOARDS, greenhouse_fetch),
+    "startup_lever": (STARTUP_LEVER_BOARDS, lever_fetch),
+    "startup_ashby": (STARTUP_ASHBY_BOARDS, ashby_fetch),
+    "remoteok": ([None], remoteok_fetch),
+    "weworkremotely": ([None], weworkremotely_fetch),
+    "remotive": ([None], remotive_fetch),
+    "jobicy": ([None], jobicy_fetch),
+    "arbeitnow": ([None], arbeitnow_fetch),
+    "adzuna": ([None], adzuna_fetch),
+    "ycombinator": ([None], ycombinator_fetch),
+    "remoteco": ([None], remoteco_fetch),
+    "himalayas": ([None], himalayas_fetch),
+    "wellfound": ([None], wellfound_fetch),
+    "otta": ([None], ota_fetch),
+    "levels_fyi": ([None], levels_fyi_fetch),
+    "indeed": ([None], indeed_fetch),
+    "career_pages": ([None], career_pages_fetch),
 }
 
 
@@ -147,6 +156,7 @@ def main():
         f"Options: {', '.join(SOURCE_SCRAPERS)}",
     )
     parser.add_argument("--workers", type=int, default=8, help="Max concurrent fetches (default: 8)")
+    parser.add_argument("--no-semantic", action="store_true", help="Disable semantic embeddings (use TF-IDF only)")
     args = parser.parse_args()
 
     sources = [s.strip() for s in args.source.split(",")] if args.source else list(SOURCE_SCRAPERS)
@@ -160,9 +170,9 @@ def main():
     print(f"Purged {purged} jobs older than {MATCH_RETENTION_DAYS} days.")
 
     if GROQ_API_KEY:
-        print(f"Matcher: Groq ({GROQ_MODEL}) + TF-IDF prefilter")
+        print(f"Matcher: Groq ({GROQ_MODEL}) + semantic embeddings + TF-IDF")
     else:
-        print("Matcher: TF-IDF only (no GROQ_API_KEY set)")
+        print("Matcher: Semantic embeddings + TF-IDF (no GROQ_API_KEY)")
 
     print("Scraping sources...")
     jobs = collect_all_jobs(sources, max_workers=args.workers)
@@ -174,7 +184,7 @@ def main():
               "Fill it in with your skills/resume text for real matching.")
 
     print("Scoring against resume.txt...")
-    jobs = score_jobs(jobs, resume_text)
+    jobs = score_jobs(jobs, resume_text, use_semantic=not args.no_semantic)
 
     print("Storing (deduped)...")
     inserted, skipped = store_jobs(jobs)
