@@ -1,14 +1,15 @@
 import requests
 
-from app.config import REMOTE_KEYWORDS
 from app.scrapers.base import normalize_job
+from app.scrapers.keywords import is_senior, is_junior_devops
+from app.scrapers.locations import is_location_allowed
 
 URL = "https://arbeitnow.com/api/job-board-api"
 
 
 def fetch_jobs(timeout: int = 15) -> list[dict]:
     """Arbeitnow's public job-board API returns every tech category, so
-    results are filtered down to DevOps/Cloud-relevant keywords."""
+    results are filtered down to DevOps/Cloud-relevant junior roles."""
     resp = requests.get(URL, timeout=timeout)
     if resp.status_code != 200:
         return []
@@ -17,19 +18,27 @@ def fetch_jobs(timeout: int = 15) -> list[dict]:
     jobs = []
     for item in data.get("data", []):
         title = item.get("title", "Untitled")
-        haystack = f"{title} {' '.join(item.get('tags', []))}".lower()
-        if not any(kw in haystack for kw in REMOTE_KEYWORDS):
+        if is_senior(title):
+            continue
+
+        description = item.get("description", "")
+        if not is_junior_devops(title, description):
+            continue
+
+        location = item.get("location") or ("Remote" if item.get("remote") else None)
+        allowed, reason = is_location_allowed(location, description)
+        if not allowed:
             continue
 
         jobs.append(
             normalize_job(
                 company=item.get("company_name", "Unknown"),
                 title=title,
-                location=item.get("location") or ("Remote" if item.get("remote") else None),
+                location=location,
                 url=item.get("url", ""),
                 source="arbeitnow",
                 posted_date=item.get("created_at"),
-                description=item.get("description", ""),
+                description=description,
             )
         )
     return jobs

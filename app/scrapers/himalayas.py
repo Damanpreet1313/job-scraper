@@ -4,17 +4,19 @@ from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior, is_junior_devops
 from app.scrapers.locations import is_location_allowed
 
-URL = "https://remotive.com/api/remote-jobs"
+HIMALAYAS_URL = "https://himalayas.app/jobs/api"
 
 
 def fetch_jobs(timeout: int = 15, max_pages: int = 5) -> list[dict]:
-    """Remotive's public job API returns every remote category, so results
-    are filtered down to DevOps/Cloud-relevant junior roles. Paginates via the
-    `next_url` field until `max_pages` or the end of the list."""
+    """Himalayas.app public job API - returns remote jobs across categories.
+    Filtered to DevOps/Cloud-relevant junior roles."""
     jobs = []
-    url = URL
-    for _ in range(max_pages):
-        resp = requests.get(url, timeout=timeout)
+    for page in range(1, max_pages + 1):
+        resp = requests.get(
+            HIMALAYAS_URL,
+            params={"page": page, "per_page": 50},
+            timeout=timeout,
+        )
         if resp.status_code != 200:
             break
 
@@ -28,7 +30,7 @@ def fetch_jobs(timeout: int = 15, max_pages: int = 5) -> list[dict]:
             if not is_junior_devops(title, description):
                 continue
 
-            location = item.get("candidate_required_location") or "Remote"
+            location = item.get("location") or "Remote"
             allowed, reason = is_location_allowed(location, description)
             if not allowed:
                 continue
@@ -39,14 +41,12 @@ def fetch_jobs(timeout: int = 15, max_pages: int = 5) -> list[dict]:
                     title=title,
                     location=location,
                     url=item.get("url", ""),
-                    source="remotive",
-                    posted_date=item.get("publication_date"),
+                    source="himalayas",
+                    posted_date=item.get("published_at"),
                     description=description,
                 )
             )
 
-        next_url = data.get("next_url")
-        if not next_url:
+        if not data.get("jobs"):
             break
-        url = next_url
     return jobs

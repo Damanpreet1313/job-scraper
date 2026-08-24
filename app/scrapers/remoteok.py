@@ -1,7 +1,8 @@
 import requests
 
-from app.config import REMOTE_KEYWORDS
 from app.scrapers.base import normalize_job
+from app.scrapers.keywords import is_senior, is_junior_devops
+from app.scrapers.locations import is_location_allowed
 
 URL = "https://remoteok.com/api"
 HEADERS = {"User-Agent": "Mozilla/5.0 (job-scraper personal use)"}
@@ -9,7 +10,7 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (job-scraper personal use)"}
 
 def fetch_jobs(timeout: int = 15) -> list[dict]:
     """RemoteOK's API is unauthenticated but returns *every* category, so
-    results are filtered down to DevOps/Cloud-relevant keywords."""
+    results are filtered down to DevOps/Cloud-relevant junior roles."""
     resp = requests.get(URL, headers=HEADERS, timeout=timeout)
     if resp.status_code != 200:
         return []
@@ -22,17 +23,26 @@ def fetch_jobs(timeout: int = 15) -> list[dict]:
             continue
 
         title = item.get("position", "Untitled")
-        description = item.get("description", "")
-        haystack = f"{title} {description} {' '.join(item.get('tags', []))}".lower()
+        if is_senior(title):
+            continue
 
-        if not any(kw in haystack for kw in REMOTE_KEYWORDS):
+        description = item.get("description", "")
+        tags = item.get("tags", [])
+
+        # Check title + description (not tags, which are too broad)
+        if not is_junior_devops(title, description):
+            continue
+
+        location = item.get("location") or "Remote"
+        allowed, reason = is_location_allowed(location, description)
+        if not allowed:
             continue
 
         jobs.append(
             normalize_job(
                 company=item.get("company", "Unknown"),
                 title=title,
-                location=item.get("location") or "Remote",
+                location=location,
                 url=item.get("url", ""),
                 source="remoteok",
                 posted_date=item.get("date"),

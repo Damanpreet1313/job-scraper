@@ -37,11 +37,14 @@ from app.scrapers import (
     arbeitnow,
     ashby,
     greenhouse,
+    himalayas,
     jobicy,
     lever,
     remoteok,
+    remoteco,
     remotive,
     weworkremotely,
+    ycombinator,
 )
 
 # source -> (list of board slugs, fetch callable)
@@ -58,6 +61,9 @@ SOURCE_SCRAPERS = {
     "jobicy": ([None], jobicy.fetch_jobs),
     "arbeitnow": ([None], arbeitnow.fetch_jobs),
     "adzuna": ([None], adzuna.fetch_jobs),
+    "ycombinator": ([None], ycombinator.fetch_jobs),
+    "remoteco": ([None], remoteco.fetch_jobs),
+    "himalayas": ([None], himalayas.fetch_jobs),
 }
 
 
