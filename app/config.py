@@ -27,17 +27,14 @@ ADZUNA_REGION = os.getenv("ADZUNA_REGION") or "in"
 # to avoid false positives from company boilerplate text.
 DEVOPS_KEYWORDS = [
     "devops",
-    "cloud",
     "sre",
+    "site reliability engineer",
     "site reliability",
     "platform engineer",
-    "infrastructure",
+    "infrastructure engineer",
     "kubernetes",
     "terraform",
     "docker",
-    "aws",
-    "azure",
-    "gcp",
     "ci/cd",
     "cicd",
     "jenkins",
@@ -49,20 +46,8 @@ DEVOPS_KEYWORDS = [
     "ansible",
     "prometheus",
     "grafana",
-    "observability",
     "reliability engineer",
     "production engineer",
-    "systems engineer",
-    "network engineer",
-    "security engineer",
-    "devsecops",
-    # Additional keywords for junior/adjacent roles:
-    "backend engineer",
-    "software engineer",
-    "systems engineer",
-    "infrastructure engineer",
-    "platform engineer",
-    "reliability engineer",
     "build engineer",
     "release engineer",
     "deployment engineer",
@@ -70,8 +55,7 @@ DEVOPS_KEYWORDS = [
     "k8s",
     "cloudformation",
     "pulumi",
-    "observability",
-    "monitoring",
+    "devsecops",
 ]
 
 # Junior/Entry-level/Internship keywords — match against job TITLE only
@@ -93,7 +77,7 @@ JUNIOR_KEYWORDS = [
     "new grad",
     "new-grad",
     # Additional keywords for real-world junior titles:
-    "associate",
+    # "associate" removed - too generic (matches "Sales Associate", "Cloud Native Associate cert", etc.)
     "level 1",
     "level 2",
     "l1",
