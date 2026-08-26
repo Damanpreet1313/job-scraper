@@ -22,10 +22,11 @@ def is_senior(title: str) -> bool:
 
 def is_junior_devops(title: str, description: str) -> bool:
     """Check if job is a junior DevOps role (requires BOTH devops AND junior keywords).
-    Matches on title only to avoid false positives from description content
-    (e.g., 'mentor junior team members', 'experience with Kubernetes required')."""
+    Checks title + description for junior keywords since many roles list
+    '0-2 years', 'entry level', 'new grad' in description not title."""
     has_devops = _has_keyword(title, DEVOPS_PATTERNS)
-    has_junior = _has_keyword(title, JUNIOR_PATTERNS)
+    haystack = f"{title} {description}"
+    has_junior = _has_keyword(haystack, JUNIOR_PATTERNS)
     return has_devops and has_junior
 
 
