@@ -53,4 +53,7 @@ async def fetch_jobs(timeout: int = 15, max_pages: int = 5) -> list[dict]:
             if not next_url:
                 break
             url = next_url
+        except Exception as e:
+            logger.error("remotive_fetch_error", extra={"page": page, "error": str(e)})
+            break
     return jobs

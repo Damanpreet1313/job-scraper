@@ -50,4 +50,7 @@ async def fetch_jobs(timeout: int = 15, max_pages: int = 5) -> list[dict]:
 
             if not data.get("jobs"):
                 break
+        except Exception as e:
+            logger.error("himalayas_fetch_error", extra={"page": page, "error": str(e)})
+            break
     return jobs
