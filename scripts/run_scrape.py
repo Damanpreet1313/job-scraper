@@ -121,6 +121,11 @@ async def collect_all_jobs(sources: list[str], max_workers: int = 8, timeout_sec
             logger.error("task_failed", extra={"error": str(result)})
         else:
             jobs.extend(result)
+    
+    # Close HTTP client to release connections
+    from app.scrapers.http_client import close_http_client
+    await close_http_client()
+    
     return jobs
 
 

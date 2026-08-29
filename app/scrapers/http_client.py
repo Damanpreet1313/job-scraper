@@ -117,7 +117,13 @@ async def get_http_client() -> ScraperHTTPClient:
     """Get or create the default HTTP client."""
     global _default_client
     if _default_client is None:
-        _default_client = ScraperHTTPClient()
+        _default_client = ScraperHTTPClient(
+            max_retries=2,
+            base_delay=0.5,
+            max_delay=10.0,
+            timeout=20.0,
+            rate_limit_per_second=50.0,
+        )
     return _default_client
 
 
