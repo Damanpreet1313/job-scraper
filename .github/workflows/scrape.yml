@@ -41,7 +41,8 @@ jobs:
           MATCH_THRESHOLD: ${{ secrets.MATCH_THRESHOLD }}
           MATCH_RETENTION_DAYS: ${{ secrets.MATCH_RETENTION_DAYS }}
         run: |
-          python scripts/run_scrape.py --workers 6
+          # Use only CI-friendly sources (others block GitHub IPs)
+          python scripts/run_scrape.py --workers 6 --source remoteok,remotive,weworkremotely,jobicy,arbeitnow,ycombinator,indeed
 
       - name: Export matches
         run: |
