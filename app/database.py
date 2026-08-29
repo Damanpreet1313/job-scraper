@@ -30,6 +30,7 @@ def _ensure_columns():
     existing_cols = {col["name"] for col in inspector.get_columns("jobs")}
     needed_cols = {
         "match_reason": "TEXT",
+        "posted_date_parsed": "DATETIME",
     }
 
     with engine.connect() as conn:

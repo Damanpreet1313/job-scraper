@@ -1,23 +1,22 @@
 """Levels.fyi job scraper via public API."""
-import requests
-
+from app.logging_config import get_logger
 from app.scrapers.base import normalize_job
+from app.scrapers.http_client import get_http_client
 from app.scrapers.keywords import is_senior, is_devops_role, JUNIOR_PATTERNS
 from app.scrapers.locations import is_location_allowed
+
+logger = get_logger(__name__)
 
 LEVELS_FYI_API = "https://www.levels.fyi/api/v2/jobs"
 
 
-def fetch_jobs(timeout: int = 15, max_pages: int = 3) -> list[dict]:
+async def fetch_jobs(timeout: int = 15, max_pages: int = 3) -> list[dict]:
     """Levels.fyi API - big tech company jobs."""
+    client = await get_http_client()
     jobs = []
     devops_categories = [
-        "DevOps Engineer",
-        "Cloud Engineer",
-        "Site Reliability Engineer",
-        "Platform Engineer",
-        "Infrastructure Engineer",
-        "Systems Engineer",
+        "DevOps Engineer", "Cloud Engineer", "Site Reliability Engineer",
+        "Platform Engineer", "Infrastructure Engineer", "Systems Engineer",
         "Production Engineer",
     ]
 
@@ -31,10 +30,12 @@ def fetch_jobs(timeout: int = 15, max_pages: int = 3) -> list[dict]:
             }
 
             try:
-                resp = requests.get(LEVELS_FYI_API, params=params, timeout=timeout)
+                resp = await client.get(LEVELS_FYI_API, params=params, timeout=timeout)
                 if resp.status_code != 200:
+                    logger.warning("levels_fyi_non_200", extra={"category": category, "page": page, "status": resp.status_code})
                     break
-            except Exception:
+            except Exception as e:
+                logger.error("levels_fyi_fetch_error", extra={"category": category, "page": page, "error": str(e)})
                 break
 
             data = resp.json()
@@ -52,10 +53,8 @@ def fetch_jobs(timeout: int = 15, max_pages: int = 3) -> list[dict]:
                 location = item.get("location", "Remote")
                 level = item.get("level", "").lower()
 
-                # Filter for junior levels
                 junior_levels = ["intern", "new grad", "entry", "junior", "level 1", "level 2", "l1", "l2", "e1", "e2", "e3"]
                 if not any(jl in level for jl in junior_levels):
-                    # Also check title for junior keywords
                     haystack = f"{title} {description}"
                     has_junior = any(p.search(haystack) for p in JUNIOR_PATTERNS)
                     if not has_junior:

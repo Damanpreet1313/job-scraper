@@ -9,8 +9,8 @@ Sources are fetched concurrently to cut wall-clock time, then deduped,
 scored against resume.txt, and stored.
 """
 import argparse
+import asyncio
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -30,6 +30,7 @@ from app.config import (
 )
 from app.database import SessionLocal, init_db
 from app.llm_matcher import score_jobs
+from app.logging_config import setup_logging, get_logger
 from app.matcher import load_resume_text
 from app.models import Job
 from app.scrapers.adzuna import fetch_jobs as adzuna_fetch
@@ -76,36 +77,47 @@ SOURCE_SCRAPERS = {
 }
 
 
-def fetch_one(source: str, slug: str | None, fetcher) -> list[dict]:
+logger = get_logger(__name__)
+
+
+async def fetch_one(source: str, slug: str | None, fetcher) -> list[dict]:
     """Fetch one board (or one global source when slug is None)."""
     label = f"{source}/{slug}" if slug else source
     try:
-        fetched = fetcher(slug) if slug else fetcher()
-        print(f"  {label}: {len(fetched)} jobs")
+        fetched = await fetcher(slug) if slug else await fetcher()
+        logger.info("fetch_complete", extra={"source": label, "count": len(fetched)})
         return fetched
     except Exception as e:
-        print(f"  {label} failed: {e}")
+        logger.error("fetch_failed", extra={"source": label, "error": str(e), "error_type": type(e).__name__})
         return []
 
 
-def collect_all_jobs(sources: list[str], max_workers: int = 8) -> list[dict]:
+async def collect_all_jobs(sources: list[str], max_workers: int = 8) -> list[dict]:
+    """Fetch all jobs concurrently with semaphore for concurrency control."""
+    semaphore = asyncio.Semaphore(max_workers)
+
+    async def fetch_with_semaphore(source: str, slug: str | None, fetcher):
+        async with semaphore:
+            return await fetch_one(source, slug, fetcher)
+
     jobs = []
-    with ThreadPoolExecutor(max_workers=max_workers) as pool:
-        futures = []
-        for source in sources:
-            slugs, fetcher = SOURCE_SCRAPERS[source]
-            for slug in slugs:
-                futures.append(pool.submit(fetch_one, source, slug, fetcher))
-        for future in as_completed(futures):
-            jobs.extend(future.result())
+    tasks = []
+    for source in sources:
+        slugs, fetcher = SOURCE_SCRAPERS[source]
+        for slug in slugs:
+            tasks.append(fetch_with_semaphore(source, slug, fetcher))
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    for result in results:
+        if isinstance(result, Exception):
+            logger.error("task_failed", extra={"error": str(result)})
+        else:
+            jobs.extend(result)
     return jobs
 
 
 def purge_old_jobs() -> int:
-    """Deletes jobs older than MATCH_RETENTION_DAYS. A posting that's still
-    live gets re-scraped and re-inserted with a fresh timestamp on the next
-    run, so this only drops listings that have actually aged out — nothing
-    still-relevant silently disappears for good."""
+    """Deletes jobs older than MATCH_RETENTION_DAYS."""
     cutoff = datetime.utcnow() - timedelta(days=MATCH_RETENTION_DAYS)
     db = SessionLocal()
     try:
@@ -133,6 +145,7 @@ def store_jobs(jobs: list[dict]) -> tuple[int, int]:
                     url=job["url"],
                     source=job["source"],
                     posted_date=job.get("posted_date"),
+                    posted_date_parsed=job.get("posted_date_parsed"),
                     description=job.get("description"),
                     content_hash=job["content_hash"],
                     match_score=job.get("match_score", 0.0),
@@ -148,7 +161,7 @@ def store_jobs(jobs: list[dict]) -> tuple[int, int]:
     return inserted, skipped
 
 
-def main():
+async def main_async():
     parser = argparse.ArgumentParser(description="Scrape, dedupe, score, and store DevOps/Cloud jobs.")
     parser.add_argument(
         "--source",
@@ -157,7 +170,11 @@ def main():
     )
     parser.add_argument("--workers", type=int, default=8, help="Max concurrent fetches (default: 8)")
     parser.add_argument("--no-semantic", action="store_true", help="Disable semantic embeddings (use TF-IDF only)")
+    parser.add_argument("--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"])
+    parser.add_argument("--json-logs", action="store_true", help="Output logs as JSON")
     args = parser.parse_args()
+
+    setup_logging(level=args.log_level, json_format=args.json_logs)
 
     sources = [s.strip() for s in args.source.split(",")] if args.source else list(SOURCE_SCRAPERS)
     unknown = [s for s in sources if s not in SOURCE_SCRAPERS]
@@ -167,31 +184,41 @@ def main():
     init_db()
 
     purged = purge_old_jobs()
-    print(f"Purged {purged} jobs older than {MATCH_RETENTION_DAYS} days.")
+    logger.info("purged_old_jobs", extra={"count": purged, "retention_days": MATCH_RETENTION_DAYS})
 
     if GROQ_API_KEY:
-        print(f"Matcher: Groq ({GROQ_MODEL}) + semantic embeddings + TF-IDF")
+        logger.info("matcher_config", extra={"mode": "groq", "model": GROQ_MODEL})
     else:
-        print("Matcher: Semantic embeddings + TF-IDF (no GROQ_API_KEY)")
+        logger.info("matcher_config", extra={"mode": "semantic+tfidf"})
 
-    print("Scraping sources...")
-    jobs = collect_all_jobs(sources, max_workers=args.workers)
-    print(f"Total raw postings fetched: {len(jobs)}")
+    logger.info("scraping_started", extra={"sources": sources, "max_workers": args.workers})
+    jobs = await collect_all_jobs(sources, max_workers=args.workers)
+    logger.info("scraping_completed", extra={"total_raw_postings": len(jobs)})
 
     resume_text = load_resume_text()
     if not resume_text.strip():
-        print("Warning: resume.txt is empty/placeholder — match scores will be 0. "
-              "Fill it in with your skills/resume text for real matching.")
+        logger.warning("resume_empty", extra={"message": "resume.txt is empty — match scores will be 0"})
 
-    print("Scoring against resume.txt...")
+    logger.info("scoring_started", extra={"use_semantic": not args.no_semantic})
     jobs = score_jobs(jobs, resume_text, use_semantic=not args.no_semantic)
 
-    print("Storing (deduped)...")
+    logger.info("storing_started")
     inserted, skipped = store_jobs(jobs)
     matched = sum(1 for j in jobs if j.get("match_score", 0) >= MATCH_THRESHOLD)
 
-    print(f"\nDone. Inserted {inserted} new jobs, skipped {skipped} duplicates.")
-    print(f"{matched} of this run's postings scored above the match threshold ({MATCH_THRESHOLD}).")
+    logger.info(
+        "scrape_completed",
+        extra={
+            "inserted": inserted,
+            "skipped": skipped,
+            "matched_above_threshold": matched,
+            "threshold": MATCH_THRESHOLD,
+        },
+    )
+
+
+def main():
+    asyncio.run(main_async())
 
 
 if __name__ == "__main__":

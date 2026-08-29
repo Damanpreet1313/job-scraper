@@ -4,10 +4,30 @@ from typing import List
 
 from app.config import DEVOPS_KEYWORDS, JUNIOR_KEYWORDS, SENIOR_EXCLUSION_KEYWORDS
 
+
+def _compile_patterns(keywords: List[str]) -> List[re.Pattern]:
+    """Compile patterns with flexible boundaries for keywords with punctuation or spaces."""
+    patterns = []
+    for kw in keywords:
+        # For keywords ending with punctuation (like "sr."), use flexible boundary
+        if kw.endswith((".", "!", "?")):
+            escaped = re.escape(kw)
+            patterns.append(re.compile(rf"(^|\s){escaped}(\s|$|[.,;:])", re.IGNORECASE))
+        # For keywords with leading/trailing spaces (like " 2 "), use flexible boundaries
+        elif kw.startswith(" ") or kw.endswith(" "):
+            stripped = kw.strip()
+            escaped = re.escape(stripped)
+            patterns.append(re.compile(rf"(^|\s){escaped}(\s|$|[.,;:])", re.IGNORECASE))
+        else:
+            escaped = re.escape(kw)
+            patterns.append(re.compile(rf"\b{escaped}\b", re.IGNORECASE))
+    return patterns
+
+
 # Pre-compile regex patterns for word-boundary matching
-DEVOPS_PATTERNS = [re.compile(rf"\b{re.escape(kw)}\b", re.IGNORECASE) for kw in DEVOPS_KEYWORDS]
-JUNIOR_PATTERNS = [re.compile(rf"\b{re.escape(kw)}\b", re.IGNORECASE) for kw in JUNIOR_KEYWORDS]
-SENIOR_PATTERNS = [re.compile(rf"\b{re.escape(kw)}\b", re.IGNORECASE) for kw in SENIOR_EXCLUSION_KEYWORDS]
+DEVOPS_PATTERNS = _compile_patterns(DEVOPS_KEYWORDS)
+JUNIOR_PATTERNS = _compile_patterns(JUNIOR_KEYWORDS)
+SENIOR_PATTERNS = _compile_patterns(SENIOR_EXCLUSION_KEYWORDS)
 
 # False positive patterns - junior keywords used in non-junior contexts
 JUNIOR_FALSE_POSITIVE_PATTERNS = [

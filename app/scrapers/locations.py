@@ -16,11 +16,11 @@ NCR_PATTERNS = [re.compile(rf"\b{re.escape(loc)}\b", re.IGNORECASE) for loc in D
 # More specific patterns - only match work arrangement phrases, not incidental words
 # Avoid false positives like "worldwide" in "agencies worldwide" or "distributed" in "distributed systems"
 REMOTE_PATTERNS = [
-    re.compile(r"\b(fully\s+remote|fully-remote|100%\s*remote|work\s+(from|remotely)\b|remote\s+(work|position|job|role|opportunity)\b|wfh\b|work\s+from\s+home\b|distributed\s+(team|company|workforce)\b|anywhere\s+(in\s+the\s+world)?\b|global\s+(remote|work))\b", re.IGNORECASE),
+    re.compile(r"\b(fully\s+remote|fully-remote|100%\s*remote|work\s+(from|remotely)\b|remote\s+(work|position|job|role|opportunity)\b|wfh\b|work\s+from\s+home\b|work\s+from\s+anywhere\b|distributed\s+(team|company|workforce)\b|anywhere\s+(in\s+the\s+world)?\b|global\s+(remote|work))\b", re.IGNORECASE),
 ]
 # Keep simple patterns for location field only (not description)
 LOCATION_REMOTE_PATTERNS = [
-    re.compile(r"\b(remote|anywhere|worldwide|global|distributed)\b", re.IGNORECASE),
+    re.compile(r"\b(remote|anywhere|worldwide|global|distributed|work from home|wfh)\b", re.IGNORECASE),
 ]
 
 ONSITE_PATTERNS = [

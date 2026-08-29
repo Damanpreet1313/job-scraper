@@ -1,15 +1,29 @@
+"""Remote.co job scraper via RSS feed."""
+import asyncio
 import feedparser
-
+from app.logging_config import get_logger
 from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior, is_junior_devops
 from app.scrapers.locations import is_location_allowed
 
+logger = get_logger(__name__)
+
 REMOTE_CO_FEED_URL = "https://remote.co/remote-jobs/devops/feed/"
 
 
-def fetch_jobs(timeout: int = 15) -> list[dict]:
+async def _fetch_feed(feed_url: str) -> list:
+    """Fetch and parse a single RSS feed in executor."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, feedparser.parse, feed_url)
+
+
+async def fetch_jobs(timeout: int = 15) -> list[dict]:
     """Remote.co DevOps category RSS feed - already scoped to DevOps."""
-    feed = feedparser.parse(REMOTE_CO_FEED_URL)
+    try:
+        feed = await _fetch_feed(REMOTE_CO_FEED_URL)
+    except Exception as e:
+        logger.error("remoteco_feed_error", extra={"error": str(e)})
+        return []
 
     jobs = []
     for entry in feed.entries:
@@ -18,7 +32,6 @@ def fetch_jobs(timeout: int = 15) -> list[dict]:
             continue
 
         description = entry.get("summary", "")
-        # Remote.co DevOps feed is already filtered, but double-check for junior
         if not is_junior_devops(title, description):
             continue
 
@@ -29,7 +42,7 @@ def fetch_jobs(timeout: int = 15) -> list[dict]:
 
         jobs.append(
             normalize_job(
-                company="Unknown",  # Remote.co RSS doesn't include company in title
+                company="Unknown",
                 title=title,
                 location=location,
                 url=entry.get("link", ""),

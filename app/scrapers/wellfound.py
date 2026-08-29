@@ -1,11 +1,13 @@
 """Wellfound (AngelList) job scraper via RSS feed."""
+import asyncio
 import feedparser
-
+from app.logging_config import get_logger
 from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior, is_devops_role, JUNIOR_PATTERNS
 from app.scrapers.locations import is_location_allowed
 
-# Wellfound RSS for DevOps/Cloud roles
+logger = get_logger(__name__)
+
 WELLFOUND_FEEDS = [
     "https://wellfound.com/role/rss/devops-engineer",
     "https://wellfound.com/role/rss/cloud-engineer",
@@ -15,13 +17,20 @@ WELLFOUND_FEEDS = [
 ]
 
 
-def fetch_jobs(timeout: int = 15) -> list[dict]:
+async def _fetch_feed(feed_url: str) -> list:
+    """Fetch and parse a single RSS feed in executor."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, feedparser.parse, feed_url)
+
+
+async def fetch_jobs(timeout: int = 15) -> list[dict]:
     """Wellfound RSS feeds for startup DevOps/Cloud roles."""
     jobs = []
     for feed_url in WELLFOUND_FEEDS:
         try:
-            feed = feedparser.parse(feed_url)
-        except Exception:
+            feed = await _fetch_feed(feed_url)
+        except Exception as e:
+            logger.error("wellfound_feed_error", extra={"url": feed_url, "error": str(e)})
             continue
 
         for entry in feed.entries:
@@ -31,7 +40,6 @@ def fetch_jobs(timeout: int = 15) -> list[dict]:
 
             description = entry.get("summary", "")
 
-            # Wellfound titles: "Company — Job Title"
             company = "Unknown"
             job_title = title
             if "—" in title:

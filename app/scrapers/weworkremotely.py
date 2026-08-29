@@ -1,16 +1,29 @@
+"""WeWorkRemotely job scraper via RSS feed."""
+import asyncio
 import feedparser
-
+from app.logging_config import get_logger
 from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior, is_devops_role, JUNIOR_PATTERNS
 from app.scrapers.locations import is_location_allowed
 
+logger = get_logger(__name__)
+
 FEED_URL = "https://weworkremotely.com/categories/remote-devops-sysadmin-jobs.rss"
 
 
-def fetch_jobs(timeout: int = 15) -> list[dict]:
-    """WWR publishes a per-category RSS feed, so this one is already
-    scoped to DevOps/SysAdmin — filter for junior roles only."""
-    feed = feedparser.parse(FEED_URL)
+async def _fetch_feed(feed_url: str) -> list:
+    """Fetch and parse a single RSS feed in executor."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, feedparser.parse, feed_url)
+
+
+async def fetch_jobs(timeout: int = 15) -> list[dict]:
+    """WWR publishes a per-category RSS feed, scoped to DevOps/SysAdmin."""
+    try:
+        feed = await _fetch_feed(FEED_URL)
+    except Exception as e:
+        logger.error("weworkremotely_feed_error", extra={"error": str(e)})
+        return []
 
     jobs = []
     for entry in feed.entries:
@@ -19,18 +32,12 @@ def fetch_jobs(timeout: int = 15) -> list[dict]:
             continue
 
         description = entry.get("summary", "")
-        # WWR titles are usually "Company: Job Title"
         company = title.split(":")[0].strip() if ":" in title else "Unknown"
         job_title = title.split(":", 1)[1].strip() if ":" in title else title
 
-        # Feed is already DevOps-scoped, so check title for devops + junior
-        # Check description only for junior keywords to avoid false positives
-        # from career-path mentions in descriptions
-        
         if not is_devops_role(job_title):
             continue
-        
-        # Check for junior keywords in title + description
+
         haystack = f"{job_title} {description}"
         has_junior = any(p.search(haystack) for p in JUNIOR_PATTERNS)
         if not has_junior:

@@ -90,6 +90,9 @@ JUNIOR_KEYWORDS = [
     "0-1 year",
     "0-2 years",
     "1-2 years",
+    "engineer i",
+    "engineer 1",
+    "engineer i ",
 ]
 
 # Senior/Lead/Principal/Staff keywords — EXCLUDE these from results
@@ -98,6 +101,7 @@ SENIOR_EXCLUSION_KEYWORDS = [
     "senior",
     "sr.",
     "sr ",
+    "sr\b",
     "lead",
     "principal",
     "staff",
@@ -122,6 +126,10 @@ SENIOR_EXCLUSION_KEYWORDS = [
     " 3 ",
     " 4 ",
     " 5 ",
+    " 2\b",
+    " 3\b",
+    " 4\b",
+    " 5\b",
     " level 2",
     " level 3",
     " level 4",
@@ -130,6 +138,16 @@ SENIOR_EXCLUSION_KEYWORDS = [
     " l3 ",
     " l4 ",
     " l5 ",
+    " e3",
+    " e4",
+    " e5",
+    " e6",
+    " e7",
+    " e8",
+    " engineer ii",
+    " engineer iii",
+    " engineer iv",
+    " engineer v",
 ]
 
 # Keyword filters applied to remote job boards (RemoteOK, WWR, Arbeitnow,
@@ -171,7 +189,7 @@ REMOTE_FRIENDLY_COUNTRIES = [
     "romania", "bulgaria", "estonia", "latvia", "lithuania", "croatia",
     "slovenia", "slovakia", "hungary", "greece", "malta", "cyprus",
     # Asia Pacific
-    "singapore", "taiwan", "malaysia", "japan", "south korea", "korea",
+    "india", "singapore", "taiwan", "malaysia", "japan", "south korea", "korea",
     "australia", "new zealand", "nz", "philippines", "vietnam", "thailand",
     "indonesia", "hong kong", "hongkong",
     # Middle East

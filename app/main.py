@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from typing import Optional
 
 from fastapi import FastAPI, Depends, Query
@@ -25,6 +26,7 @@ def list_jobs(
     matched_only: bool = Query(False, description="Only return jobs above the match threshold"),
     source: Optional[str] = Query(None, description="Filter by source: greenhouse, lever, ashby, remoteok, weworkremotely, remotive, jobicy, arbeitnow, adzuna"),
     min_score: Optional[float] = Query(None, ge=0, le=1),
+    posted_since_days: Optional[int] = Query(None, ge=1, description="Only jobs posted within last N days"),
     limit: int = Query(50, le=500),
     offset: int = 0,
     db: Session = Depends(get_db),
@@ -36,6 +38,9 @@ def list_jobs(
         query = query.filter(Job.source == source)
     if min_score is not None:
         query = query.filter(Job.match_score >= min_score)
+    if posted_since_days is not None:
+        cutoff = datetime.utcnow() - timedelta(days=posted_since_days)
+        query = query.filter(Job.posted_date_parsed >= cutoff)
 
     query = query.order_by(desc(Job.match_score), desc(Job.created_at))
     total = query.count()

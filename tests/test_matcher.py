@@ -25,3 +25,11 @@ def test_empty_resume_gives_zero_scores():
 
 def test_no_jobs_returns_empty_list():
     assert score_jobs([], resume_text=RESUME) == []
+
+
+def test_job_structure_preserved():
+    jobs = [{"title": "DevOps Engineer", "description": "AWS", "url": "https://example.com/job1"}]
+    scored = score_jobs(jobs, resume_text=RESUME)
+    assert "match_score" in scored[0]
+    assert scored[0]["url"] == "https://example.com/job1"
+    assert scored[0]["title"] == "DevOps Engineer"

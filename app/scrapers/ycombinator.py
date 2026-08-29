@@ -1,15 +1,29 @@
+"""Y Combinator job scraper via RSS feed."""
+import asyncio
 import feedparser
-
+from app.logging_config import get_logger
 from app.scrapers.base import normalize_job
 from app.scrapers.keywords import is_senior, is_junior_devops
 from app.scrapers.locations import is_location_allowed
 
+logger = get_logger(__name__)
+
 YC_FEED_URL = "https://www.ycombinator.com/jobs/rss"
 
 
-def fetch_jobs(timeout: int = 15) -> list[dict]:
-    """Y Combinator job board RSS feed - covers startup roles including DevOps/Cloud."""
-    feed = feedparser.parse(YC_FEED_URL)
+async def _fetch_feed(feed_url: str) -> list:
+    """Fetch and parse a single RSS feed in executor."""
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, feedparser.parse, feed_url)
+
+
+async def fetch_jobs(timeout: int = 15) -> list[dict]:
+    """Y Combinator job board RSS feed - startup roles including DevOps/Cloud."""
+    try:
+        feed = await _fetch_feed(YC_FEED_URL)
+    except Exception as e:
+        logger.error("ycombinator_feed_error", extra={"error": str(e)})
+        return []
 
     jobs = []
     for entry in feed.entries:
@@ -21,7 +35,6 @@ def fetch_jobs(timeout: int = 15) -> list[dict]:
         if not is_junior_devops(title, description):
             continue
 
-        # YC RSS format: "Company: Job Title"
         company = "Unknown"
         job_title = title
         if ":" in title:
