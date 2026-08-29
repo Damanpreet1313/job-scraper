@@ -92,7 +92,7 @@ async def fetch_one(source: str, slug: str | None, fetcher) -> list[dict]:
         return []
 
 
-async def collect_all_jobs(sources: list[str], max_workers: int = 8) -> list[dict]:
+async def collect_all_jobs(sources: list[str], max_workers: int = 8, timeout_seconds: int = 300) -> list[dict]:
     """Fetch all jobs concurrently with semaphore for concurrency control."""
     semaphore = asyncio.Semaphore(max_workers)
 
@@ -107,7 +107,15 @@ async def collect_all_jobs(sources: list[str], max_workers: int = 8) -> list[dic
         for slug in slugs:
             tasks.append(fetch_with_semaphore(source, slug, fetcher))
 
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    try:
+        results = await asyncio.wait_for(
+            asyncio.gather(*tasks, return_exceptions=True),
+            timeout=timeout_seconds,
+        )
+    except asyncio.TimeoutError:
+        logger.error("scrape_timeout", extra={"timeout_seconds": timeout_seconds})
+        return jobs
+
     for result in results:
         if isinstance(result, Exception):
             logger.error("task_failed", extra={"error": str(result)})
@@ -192,7 +200,7 @@ async def main_async():
         logger.info("matcher_config", extra={"mode": "semantic+tfidf"})
 
     logger.info("scraping_started", extra={"sources": sources, "max_workers": args.workers})
-    jobs = await collect_all_jobs(sources, max_workers=args.workers)
+    jobs = await collect_all_jobs(sources, max_workers=args.workers, timeout_seconds=300)
     logger.info("scraping_completed", extra={"total_raw_postings": len(jobs)})
 
     resume_text = load_resume_text()

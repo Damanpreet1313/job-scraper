@@ -18,7 +18,7 @@ class ScraperHTTPClient:
         base_delay: float = 1.0,
         max_delay: float = 30.0,
         timeout: float = 30.0,
-        rate_limit_per_second: float = 10.0,
+        rate_limit_per_second: float = 50.0,
         user_agent: str = "Mozilla/5.0 (job-scraper personal use)",
     ):
         self.max_retries = max_retries
