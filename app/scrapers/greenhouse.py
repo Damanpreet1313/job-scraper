@@ -15,7 +15,7 @@ async def fetch_jobs(slug: str, timeout: int = 15) -> list[dict]:
     url = BASE_URL.format(slug=slug)
     client = await get_http_client()
     try:
-        resp = await client.get(url, timeout=timeout)
+        resp = await client.get(url)
         if resp.status_code != 200:
             logger.warning("greenhouse_non_200", extra={"slug": slug, "status": resp.status_code})
             return []

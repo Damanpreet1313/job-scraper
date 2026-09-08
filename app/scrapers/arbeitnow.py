@@ -14,7 +14,7 @@ async def fetch_jobs(timeout: int = 15) -> list[dict]:
     """Arbeitnow's public job-board API returns every tech category."""
     client = await get_http_client()
     try:
-        resp = await client.get(URL, timeout=timeout)
+        resp = await client.get(URL)
         if resp.status_code != 200:
             logger.warning("arbeitnow_non_200", extra={"status": resp.status_code})
             return []

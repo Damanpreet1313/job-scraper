@@ -28,7 +28,7 @@ from app.config import (
     MATCH_RETENTION_DAYS,
     MATCH_THRESHOLD,
 )
-from app.database import SessionLocal, init_db
+from app.database import SessionLocal, init_db, get_db
 from app.llm_matcher import score_jobs
 from app.logging_config import setup_logging, get_logger
 from app.matcher import load_resume_text
@@ -130,24 +130,35 @@ async def collect_all_jobs(sources: list[str], max_workers: int = 8, timeout_sec
 
 
 def purge_old_jobs() -> int:
-    """Deletes jobs older than MATCH_RETENTION_DAYS."""
+    """Deletes jobs older than MATCH_RETENTION_DAYS based on posted_date_parsed.
+    
+    Uses posted_date_parsed instead of created_at so that recently re-scraped
+    active jobs (which get a new created_at but keep their original posted_date)
+    are not deleted.
+    """
+    from datetime import datetime, timedelta
     cutoff = datetime.utcnow() - timedelta(days=MATCH_RETENTION_DAYS)
-    db = SessionLocal()
-    try:
-        deleted = db.query(Job).filter(Job.created_at < cutoff).delete()
-        db.commit()
-        return deleted
-    finally:
-        db.close()
+    with get_db() as db:
+        deleted = db.query(Job).filter(
+            Job.posted_date_parsed.isnot(None),
+            Job.posted_date_parsed < cutoff
+        ).delete()
+    return deleted
 
 
 def store_jobs(jobs: list[dict]) -> tuple[int, int]:
-    db = SessionLocal()
     inserted, skipped = 0, 0
-    try:
-        existing_hashes = {row[0] for row in db.query(Job.content_hash).all()}
+    with get_db() as db:
+        existing_content_hashes = {row[0] for row in db.query(Job.content_hash).all()}
+        existing_cross_source_hashes = {row[0] for row in db.query(Job.cross_source_hash).all() if row[0]}
         for job in jobs:
-            if job["content_hash"] in existing_hashes:
+            # Skip if exact duplicate (same URL) via content_hash
+            if job["content_hash"] in existing_content_hashes:
+                skipped += 1
+                continue
+            # Skip if cross-source duplicate (same company+title on different boards)
+            cross_hash = job.get("cross_source_hash")
+            if cross_hash and cross_hash in existing_cross_source_hashes:
                 skipped += 1
                 continue
             db.add(
@@ -161,16 +172,16 @@ def store_jobs(jobs: list[dict]) -> tuple[int, int]:
                     posted_date_parsed=job.get("posted_date_parsed"),
                     description=job.get("description"),
                     content_hash=job["content_hash"],
+                    cross_source_hash=cross_hash,
                     match_score=job.get("match_score", 0.0),
                     match_reason=job.get("match_reason"),
                     matched=job.get("match_score", 0.0) >= MATCH_THRESHOLD,
                 )
             )
-            existing_hashes.add(job["content_hash"])
+            existing_content_hashes.add(job["content_hash"])
+            if cross_hash:
+                existing_cross_source_hashes.add(cross_hash)
             inserted += 1
-        db.commit()
-    finally:
-        db.close()
     return inserted, skipped
 
 

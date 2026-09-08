@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./jobs.db"
-MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD") or "0.02")
+MATCH_THRESHOLD = float(os.getenv("MATCH_THRESHOLD") or "0.15")
 
 # Optional: if set, matching uses Groq for a sharper semantic score on top of
 # the TF-IDF pre-filter. If unset, matching silently falls back to TF-IDF only.
@@ -22,6 +22,14 @@ MATCH_RETENTION_DAYS = int(os.getenv("MATCH_RETENTION_DAYS") or "3")
 ADZUNA_APP_ID = os.getenv("ADZUNA_APP_ID") or ""
 ADZUNA_APP_KEY = os.getenv("ADZUNA_APP_KEY") or ""
 ADZUNA_REGION = os.getenv("ADZUNA_REGION") or "in"
+
+# Redis URL for job queue (used to trigger async scrapes via API)
+# Format: redis://[:password]@host:port/db
+REDIS_URL = os.getenv("REDIS_URL") or "redis://localhost:6379/0"
+
+# Simple API key for protecting the scrape-trigger endpoint (personal project)
+# Set a random string in env to enable; empty = endpoint disabled
+SCRAPE_API_KEY = os.getenv("SCRAPE_API_KEY") or ""
 
 # DevOps/Cloud role keywords — match against job TITLE only (not description)
 # to avoid false positives from company boilerplate text.
@@ -52,6 +60,11 @@ DEVOPS_KEYWORDS = [
     "release engineer",
     "deployment engineer",
     "cloud engineer",
+    "cloud",
+    "aws",
+    "azure",
+    "gcp",
+    "google cloud",
     "k8s",
     "cloudformation",
     "pulumi",
@@ -152,7 +165,10 @@ SENIOR_EXCLUSION_KEYWORDS = [
 
 # Keyword filters applied to remote job boards (RemoteOK, WWR, Arbeitnow,
 # Remotive, Jobicy, Adzuna) since those aggregate every category, not just
-# DevOps/Cloud. Used for title+tags filtering.
+# DevOps/Cloud. Used for title+tags filtering as a BROAD pre-filter before
+# the stricter is_junior_devops() check (which requires BOTH devops + junior).
+# Tradeoff: broad match catches more potential jobs but may include false
+# positives that are filtered out later by is_senior() and location checks.
 REMOTE_KEYWORDS = DEVOPS_KEYWORDS + JUNIOR_KEYWORDS
 
 # --- Location Preferences ---
@@ -206,7 +222,19 @@ REMOTE_FRIENDLY_COUNTRIES = [
 # company's display name. Slugs drift and companies switch ATS providers,
 # so treat this as a starting point — verify each slug still resolves
 # (open the URL pattern in the relevant scraper file) and add your own.
-GREENHOUSE_BOARDS = [
+
+def _dedupe_preserve_order(items: list[str]) -> list[str]:
+    """Remove duplicates from list while preserving order."""
+    seen = set()
+    result = []
+    for item in items:
+        if item not in seen:
+            seen.add(item)
+            result.append(item)
+    return result
+
+
+GREENHOUSE_BOARDS = _dedupe_preserve_order([
     "gitlab",
     "stripe",
     "cloudflare",
@@ -244,9 +272,9 @@ GREENHOUSE_BOARDS = [
     "ovh",
     "hetzner",
     "contabo",
-]
+])
 
-LEVER_BOARDS = [
+LEVER_BOARDS = _dedupe_preserve_order([
     "palantir",
     "vercel",
     "planetscale",
@@ -273,9 +301,9 @@ LEVER_BOARDS = [
     "prefecthq",
     "dagster-io",
     "astronomer",
-]
+])
 
-ASHBY_BOARDS = [
+ASHBY_BOARDS = _dedupe_preserve_order([
     "ramp",
     "linear",
     "notion",
@@ -311,73 +339,20 @@ ASHBY_BOARDS = [
     "webflow",
     "airtable",
     "figma",
-]
+])
 
 # Startup-focused boards (smaller companies, earlier stage)
 # These are in addition to the main boards above
-STARTUP_GREENHOUSE_BOARDS = [
-    "vercel",
-    "planetscale",
-    "supabase",
-    "railway",
-    "render",
-    "flyio",
-    "temporal",
-    "dagster",
-    "prefect",
-    "dagster-io",
-    "hashicorp",
-    "confluent",
-    "cockroachlabs",
-    "timescale",
-    "materialize",
-    "redpanda",
-    "ngrok",
-    "airbyte",
-    "fivetran",
-    "dbt-labs",
-    "posthog",
-    "rudderstack",
-]
+# Note: startup boards are deduplicated against main boards to avoid
+# scraping the same company multiple times across ATS providers
+STARTUP_GREENHOUSE_BOARDS = _dedupe_preserve_order([
+    # Only include companies NOT already in GREENHOUSE_BOARDS
+])
 
-STARTUP_LEVER_BOARDS = [
-    "vercel",
-    "planetscale",
-    "supabase",
-    "railway",
-    "temporal",
-    "prefect",
-    "dagster",
-    "linear",
-    "notion",
-    "figma",
-    "airtable",
-    "webflow",
-    "zapier",
-    "segment",
-    "amplitude",
-    "mixpanel",
-    "heap",
-    "posthog",
-    "rudderstack",
-    "airbyte",
-    "fivetran",
-    "dbt-labs",
-]
+STARTUP_LEVER_BOARDS = _dedupe_preserve_order([
+    # Only include companies NOT already in LEVER_BOARDS
+])
 
-STARTUP_ASHBY_BOARDS = [
-    "linear",
-    "notion",
-    "temporal",
-    "prefect",
-    "vercel",
-    "planetscale",
-    "supabase",
-    "railway",
-    "render",
-    "flyio",
-    "dagster",
-    "prefecthq",
-    "dagster-io",
-    "astronomer",
-]
+STARTUP_ASHBY_BOARDS = _dedupe_preserve_order([
+    # Only include companies NOT already in ASHBY_BOARDS
+])

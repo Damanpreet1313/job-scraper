@@ -15,7 +15,7 @@ async def fetch_jobs(timeout: int = 15) -> list[dict]:
     """Jobicy's public API returns remote postings across every industry."""
     client = await get_http_client()
     try:
-        resp = await client.get(URL, params=PARAMS, timeout=timeout)
+        resp = await client.get(URL, params=PARAMS)
         if resp.status_code != 200:
             logger.warning("jobicy_non_200", extra={"status": resp.status_code})
             return []

@@ -1,28 +1,56 @@
 import sys
 from pathlib import Path
 from datetime import datetime, timedelta
+from contextlib import asynccontextmanager
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.database import SessionLocal, init_db
-from app.main import app
+from app.database import Base, get_db, engine as global_engine
 from app.models import Job
+
+# Create in-memory SQLite database for testing
+TEST_DATABASE_URL = "sqlite:///:memory:"
+test_engine = create_engine(
+    TEST_DATABASE_URL,
+    connect_args={"check_same_thread": False},
+    poolclass=StaticPool,
+)
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
+
+def override_get_db():
+    db = TestingSessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Override the global engine for tests
+import app.database
+app.database.engine = test_engine
+app.database.SessionLocal = TestingSessionLocal
+
+from app.main import app
+
+app.dependency_overrides[get_db] = override_get_db
+
+# Disable lifespan for tests
+app.router.lifespan_context = None
 
 client = TestClient(app)
 
 
 @pytest.fixture(scope="function", autouse=True)
 def setup_db():
-    init_db()
+    Base.metadata.create_all(bind=test_engine)
     now = datetime.utcnow()
-    db = SessionLocal()
+    db = TestingSessionLocal()
     try:
-        db.query(Job).delete()
-        db.commit()
-        
         # Add test jobs with relative dates
         jobs = [
             Job(
@@ -78,19 +106,16 @@ def setup_db():
         db.close()
     yield
     # Cleanup
-    db = SessionLocal()
-    try:
-        db.query(Job).delete()
-        db.commit()
-    finally:
-        db.close()
+    Base.metadata.drop_all(bind=test_engine)
 
 
 class TestAPIEndpoints:
     def test_health_endpoint(self):
         response = client.get("/health")
         assert response.status_code == 200
-        assert response.json() == {"status": "ok"}
+        data = response.json()
+        assert data["status"] in ("healthy", "degraded")  # Redis unavailable in test env
+        assert data["checks"]["database"] == "ok"
 
     def test_list_jobs(self):
         response = client.get("/jobs")
@@ -150,8 +175,8 @@ class TestAPIEndpoints:
 
     def test_get_job_not_found(self):
         response = client.get("/jobs/999")
-        assert response.status_code == 200
-        assert response.json() == {"error": "not found"}
+        assert response.status_code == 404
+        assert response.json() == {"detail": "Job not found"}
 
     def test_stats_endpoint(self):
         response = client.get("/stats")

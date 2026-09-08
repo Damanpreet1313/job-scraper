@@ -67,7 +67,7 @@ async def fetch_jobs(timeout: int = 30) -> list[dict]:
 
     for company, url, selectors in COMPANY_CAREER_PAGES:
         try:
-            resp = await client.get(url, timeout=timeout)
+            resp = await client.get(url)
             if resp.status_code != 200:
                 logger.warning("career_page_non_200", extra={"company": company, "status": resp.status_code})
                 continue

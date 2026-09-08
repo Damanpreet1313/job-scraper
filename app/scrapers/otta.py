@@ -29,7 +29,7 @@ async def fetch_jobs(timeout: int = 15, max_pages: int = 3) -> list[dict]:
         params["page"] = page
 
         try:
-            resp = await client.get(OTTA_API_URL, params=params, timeout=timeout)
+            resp = await client.get(OTTA_API_URL, params=params)
             if resp.status_code != 200:
                 logger.warning("otta_non_200", extra={"page": page, "status": resp.status_code})
                 break

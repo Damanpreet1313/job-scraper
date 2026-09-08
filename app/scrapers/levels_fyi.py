@@ -30,7 +30,7 @@ async def fetch_jobs(timeout: int = 15, max_pages: int = 3) -> list[dict]:
             }
 
             try:
-                resp = await client.get(LEVELS_FYI_API, params=params, timeout=timeout)
+                resp = await client.get(LEVELS_FYI_API, params=params)
                 if resp.status_code != 200:
                     logger.warning("levels_fyi_non_200", extra={"category": category, "page": page, "status": resp.status_code})
                     break

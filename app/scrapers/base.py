@@ -86,4 +86,20 @@ def normalize_job(company, title, location, url, source, posted_date, descriptio
         "posted_date_parsed": parsed_date,
         "description": description,
         "content_hash": make_content_hash_normalized(company, title, url),
+        "cross_source_hash": make_cross_source_hash(company, title),
     }
+
+
+def make_cross_source_hash(company: str, title: str) -> str:
+    """Cross-source dedupe key: normalized company + title only (no URL).
+    
+    Tradeoff: catches same job posted on multiple boards (Greenhouse + Lever + Ashby)
+    even when URLs differ. Risk: false positives if a company posts multiple
+    similar-titled roles (e.g., "DevOps Engineer" in different teams). This is
+    acceptable for this use case since the matching score + manual review acts
+    as a second filter.
+    """
+    company, title = normalize_title_company(company, title)
+    key = f"{company}|{title}"
+    key = re.sub(r"\s+", " ", key)
+    return hashlib.sha256(key.encode("utf-8")).hexdigest()

@@ -19,6 +19,7 @@ class Job(Base):
     description = Column(Text, nullable=True)
 
     content_hash = Column(String, unique=True, index=True, nullable=False)
+    cross_source_hash = Column(String, index=True, nullable=True)
 
     match_score = Column(Float, nullable=True)
     match_reason = Column(Text, nullable=True)

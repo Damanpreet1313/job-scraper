@@ -2,7 +2,7 @@
 from app.logging_config import get_logger
 from app.scrapers.base import normalize_job
 from app.scrapers.http_client import get_http_client
-from app.scrapers.keywords import is_senior, is_junior_devops
+from app.scrapers.keywords import is_senior, is_junior_devops, is_devops_role
 from app.scrapers.locations import is_location_allowed
 
 logger = get_logger(__name__)
@@ -14,7 +14,7 @@ async def fetch_jobs(timeout: int = 15) -> list[dict]:
     """RemoteOK's API returns every category, filtered to DevOps/Cloud junior roles."""
     client = await get_http_client()
     try:
-        resp = await client.get(URL, timeout=timeout)
+        resp = await client.get(URL)
         if resp.status_code != 200:
             logger.warning("remoteok_non_200", extra={"status": resp.status_code})
             return []
@@ -30,6 +30,10 @@ async def fetch_jobs(timeout: int = 15) -> list[dict]:
                 continue
 
             description = item.get("description", "")
+            # Include tags in searchable text since they contain relevant keywords
+            tags = item.get("tags", [])
+            if tags:
+                description = f"{description} {' '.join(tags)}"
 
             if not is_junior_devops(title, description):
                 continue

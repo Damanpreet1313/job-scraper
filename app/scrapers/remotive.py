@@ -17,7 +17,7 @@ async def fetch_jobs(timeout: int = 15, max_pages: int = 5) -> list[dict]:
     url = URL
     for page in range(max_pages):
         try:
-            resp = await client.get(url, timeout=timeout)
+            resp = await client.get(url)
             if resp.status_code != 200:
                 logger.warning("remotive_non_200", extra={"page": page, "status": resp.status_code})
                 break

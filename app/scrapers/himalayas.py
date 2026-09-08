@@ -16,7 +16,7 @@ async def fetch_jobs(timeout: int = 15, max_pages: int = 5) -> list[dict]:
     jobs = []
     for page in range(1, max_pages + 1):
         try:
-            resp = await client.get(HIMALAYAS_URL, params={"page": page, "per_page": 50}, timeout=timeout)
+            resp = await client.get(HIMALAYAS_URL, params={"page": page, "per_page": 50})
             if resp.status_code != 200:
                 logger.warning("himalayas_non_200", extra={"page": page, "status": resp.status_code})
                 break
