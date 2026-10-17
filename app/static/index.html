@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevOps/Cloud Job Scraper</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; background: #f5f5f5; color: #333; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #e0e0e0; }
+        h1 { font-size: 1.5rem; font-weight: 600; }
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 0.875rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #1d4ed8; }
+        .btn-primary:disabled { background: #93c5fd; cursor: not-allowed; }
+        .btn-secondary { background: #e5e7eb; color: #374151; }
+        .btn-secondary:hover { background: #d1d5db; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .stat-label { font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; }
+        .stat-value { font-size: 1.5rem; font-weight: 600; margin-top: 4px; }
+        .stat-value.matched { color: #059669; }
+        .stat-value.pending { color: #d97706; }
+        .controls { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; align-items: center; }
+        .filter-group { display: flex; gap: 8px; align-items: center; }
+        .filter-group label { font-size: 0.875rem; color: #4b5563; }
+        .filter-group select, .filter-group input { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.875rem; }
+        .jobs-table { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .jobs-table th, .jobs-table td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #e5e7eb; }
+        .jobs-table th { background: #f9fafb; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; color: #6b7280; letter-spacing: 0.05em; }
+        .jobs-table tr:last-child td { border-bottom: none; }
+        .jobs-table tr:hover { background: #f9fafb; }
+        .job-title { font-weight: 500; }
+        .job-company { color: #6b7280; font-size: 0.875rem; }
+        .job-location { display: inline-flex; align-items: center; gap: 4px; font-size: 0.875rem; color: #4b5563; }
+        .job-source { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 500; text-transform: uppercase; }
+        .source-greenhouse { background: #dbeafe; color: #1e40af; }
+        .source-lever { background: #fef3c7; color: #92400e; }
+        .source-ashby { background: #dcfce7; color: #166534; }
+        .source-remoteok { background: #fce7f3; color: #9d174d; }
+        .source-weworkremotely { background: #ede9fe; color: #5b21b6; }
+        .source-remotive { background: #e0e7ff; color: #3730a3; }
+        .source-jobicy { background: #fee2e2; color: #991b1b; }
+        .source-arbeitnow { background: #fef08a; color: #854d0e; }
+        .source-adzuna { background: #d1fae5; color: #065f46; }
+        .source-ycombinator { background: #fae8ff; color: #86198f; }
+        .source-other { background: #f3f4f6; color: #374151; }
+        .match-score { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+        .match-score.high { color: #059669; }
+        .match-score.medium { color: #d97706; }
+        .match-score.low { color: #dc2626; }
+        .score-bar { width: 60px; height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
+        .score-bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s; }
+        .score-bar-fill.high { background: #059669; }
+        .score-bar-fill.medium { background: #d97706; }
+        .score-bar-fill.low { background: #dc2626; }
+        .matched-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 500; background: #dcfce7; color: #166534; }
+        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .error { text-align: center; padding: 40px; color: #dc2626; }
+        .empty { text-align: center; padding: 40px; color: #6b7280; }
+        .job-link { color: #2563eb; text-decoration: none; }
+        .job-link:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .jobs-table { font-size: 0.875rem; }
+            .jobs-table th, .jobs-table td { padding: 8px 12px; }
+            header { flex-direction: column; gap: 16px; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DevOps/Cloud Job Scraper</h1>
+            <div class="header-actions">
+                <span id="lastScrape" style="font-size: 0.875rem; color: #6b7280;">Last scrape: —</span>
+                <button id="scrapeBtn" class="btn btn-primary" onclick="triggerScrape()">Trigger Scrape</button>
+            </div>
+        </header>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">Total Jobs</div>
+                <div class="stat-value" id="totalJobs">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Matched Jobs</div>
+                <div class="stat-value matched" id="matchedJobs">—</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Pending Review</div>
+                <div class="stat-value pending" id="pendingJobs">—</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="sourceFilter">Source:</label>
+                <select id="sourceFilter" onchange="loadJobs()">
+                    <option value="">All Sources</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="matchedFilter">Status:</label>
+                <select id="matchedFilter" onchange="loadJobs()">
+                    <option value="">All</option>
+                    <option value="true">Matched Only</option>
+                    <option value="false">Unmatched Only</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="minScore">Min Score:</label>
+                <input type="range" id="minScore" min="0" max="1" step="0.05" value="0" oninput="document.getElementById('minScoreVal').textContent = this.value; loadJobs()">
+                <span id="minScoreVal">0</span>
+            </div>
+        </div>
+
+        <div id="jobsContainer">
+            <div class="loading">Loading jobs...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+        let scrapeApiKey = ''; // Set via env or prompt
+
+        async function fetchApi(endpoint, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (scrapeApiKey && endpoint === '/scrape') {
+                headers['X-API-Key'] = scrapeApiKey;
+            }
+            const res = await fetch(API_BASE + endpoint, { ...options, headers });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: res.statusText }));
+                throw new Error(err.detail || `HTTP ${res.status}`);
+            }
+            return res.json();
+        }
+
+        async function loadJobs() {
+            const container = document.getElementById('jobsContainer');
+            container.innerHTML = '<div class="loading">Loading jobs...</div>';
+
+            const params = new URLSearchParams();
+            const source = document.getElementById('sourceFilter').value;
+            const matched = document.getElementById('matchedFilter').value;
+            const minScore = document.getElementById('minScore').value;
+
+            if (source) params.set('source', source);
+            if (matched) params.set('matched_only', matched);
+            if (minScore > 0) params.set('min_score', minScore);
+            params.set('limit', '100');
+
+            try {
+                const data = await fetchApi('/jobs?' + params.toString());
+                renderJobs(data.jobs);
+                updateStats(data);
+                populateSourceFilter(data.jobs);
+            } catch (e) {
+                container.innerHTML = `<div class="error">Error loading jobs: ${e.message}</div>`;
+            }
+        }
+
+        function renderJobs(jobs) {
+            const container = document.getElementById('jobsContainer');
+            if (!jobs.length) {
+                container.innerHTML = '<div class="empty">No jobs found matching your filters.</div>';
+                return;
+            }
+
+            const rows = jobs.map(job => `
+                <tr>
+                    <td>
+                        <div class="job-title">${escapeHtml(job.title)}</div>
+                        <div class="job-company">${escapeHtml(job.company)}</div>
+                    </td>
+                    <td><span class="job-location">📍 ${escapeHtml(job.location || 'Unknown')}</span></td>
+                    <td><span class="job-source source-${job.source.toLowerCase().replace(/[^a-z]/g, '') || 'other'}">${escapeHtml(job.source)}</span></td>
+                    <td>
+                        ${job.matched ? '<span class="matched-badge">Matched</span>' : ''}
+                        <div class="match-score ${getScoreClass(job.match_score)}" style="margin-top: 4px;">
+                            <span>${(job.match_score * 100).toFixed(0)}%</span>
+                            <div class="score-bar"><div class="score-bar-fill ${getScoreClass(job.match_score)}" style="width: ${job.match_score * 100}%"></div></div>
+                        </div>
+                        ${job.match_reason ? `<div style="font-size: 0.75rem; color: #6b7280; margin-top: 4px;">${escapeHtml(job.match_reason)}</div>` : ''}
+                    </td>
+                    <td>
+                        <a href="${escapeHtml(job.url)}" target="_blank" rel="noopener" class="job-link">View</a>
+                    </td>
+                </tr>
+            `).join('');
+
+            container.innerHTML = `
+                <table class="jobs-table">
+                    <thead>
+                        <tr>
+                            <th>Title / Company</th>
+                            <th>Location</th>
+                            <th>Source</th>
+                            <th>Match</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
+        }
+
+        function getScoreClass(score) {
+            if (score >= 0.6) return 'high';
+            if (score >= 0.3) return 'medium';
+            return 'low';
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalJobs').textContent = data.total;
+            const matched = data.jobs.filter(j => j.matched).length;
+            document.getElementById('matchedJobs').textContent = matched;
+            document.getElementById('pendingJobs').textContent = data.total - matched;
+        }
+
+        function populateSourceFilter(jobs) {
+            const select = document.getElementById('sourceFilter');
+            const sources = [...new Set(jobs.map(j => j.source))].sort();
+            const current = select.value;
+            select.innerHTML = '<option value="">All Sources</option>' + sources.map(s => `<option value="${s}" ${s === current ? 'selected' : ''}>${s}</option>`).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function triggerScrape() {
+            const btn = document.getElementById('scrapeBtn');
+            const originalText = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Queuing...';
+
+            try {
+                if (!scrapeApiKey) {
+                    scrapeApiKey = prompt('Enter SCRAPE_API_KEY:');
+                    if (!scrapeApiKey) throw new Error('API key required');
+                }
+                const res = await fetchApi('/scrape', { method: 'POST' });
+                btn.textContent = 'Queued! Polling...';
+                pollScrapeStatus();
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                alert('Failed to trigger scrape: ' + e.message);
+            }
+        }
+
+        async function pollScrapeStatus() {
+            const btn = document.getElementById('scrapeBtn');
+            try {
+                const status = await fetchApi('/scrape/status');
+                if (status.status === 'running') {
+                    btn.textContent = `Running... (${status.sources || 'all sources'})`;
+                    setTimeout(pollScrapeStatus, 5000);
+                } else if (status.status === 'completed') {
+                    btn.disabled = false;
+                    btn.textContent = 'Trigger Scrape';
+                    document.getElementById('lastScrape').textContent = `Last scrape: ${new Date().toLocaleString()} — Inserted: ${status.inserted}, Skipped: ${status.skipped}, Matched: ${status.matched_above_threshold}`;
+                    loadJobs();
+                } else if (status.status === 'failed') {
+                    btn.disabled = false;
+                    btn.textContent = 'Trigger Scrape';
+                    alert('Scrape failed: ' + (status.error || 'Unknown error'));
+                } else {
+                    setTimeout(pollScrapeStatus, 5000);
+                }
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = 'Trigger Scrape';
+                alert('Error polling status: ' + e.message);
+            }
+        }
+
+        // Load jobs on page load
+        loadJobs();
+    </script>
+</body>
+</html>
