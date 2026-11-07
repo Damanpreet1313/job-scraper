@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DevOps/Cloud Junior Job Matches</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.6;
+    }
+    .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+    header {
+      background: #1a1a2e;
+      color: white;
+      padding: 30px 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      border-radius: 8px;
+    }
+    header h1 { font-size: 1.8rem; margin-bottom: 8px; }
+    header p { opacity: 0.8; font-size: 0.95rem; }
+    .stats { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+    .stat { background: rgba(255,255,255,0.1); padding: 12px 20px; border-radius: 6px; }
+    .stat strong { font-size: 1.5rem; display: block; }
+    .stat span { font-size: 0.8rem; opacity: 0.9; }
+    .filters { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; padding: 16px; background: white; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .filters select, .filters input { padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.9rem; }
+    .filters input { flex: 1; min-width: 200px; }
+    .job-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .job-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .job-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .job-title { font-size: 1.1rem; font-weight: 600; color: #1a1a2e; }
+    .job-score { background: #1a1a2e; color: white; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; }
+    .job-meta { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; font-size: 0.85rem; color: #666; }
+    .job-meta span { display: flex; align-items: center; gap: 4px; }
+    .job-meta strong { color: #333; }
+    .job-description { color: #555; font-size: 0.9rem; margin-bottom: 16px; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .job-footer { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .job-link { background: #1a1a2e; color: white; padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: background 0.2s; }
+    .job-link:hover { background: #16213e; }
+    .job-source { font-size: 0.75rem; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+    .no-jobs { text-align: center; padding: 60px 20px; color: #999; }
+    .no-jobs h3 { margin-bottom: 8px; color: #666; }
+    .loading { text-align: center; padding: 40px; color: #666; }
+    .updated { text-align: right; font-size: 0.8rem; color: #999; margin-bottom: 20px; }
+    @media (max-width: 600px) {
+      .container { padding: 12px; }
+      header h1 { font-size: 1.5rem; }
+      .job-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🎯 DevOps/Cloud Junior Job Matches</h1>
+      <p>Curated junior, entry-level & internship roles — filtered for your skills</p>
+      <div class="stats">
+        <div class="stat"><strong id="totalCount">—</strong><span>Total Matches</span></div>
+        <div class="stat"><strong id="sourceCount">—</strong><span>Sources</span></div>
+        <div class="stat"><strong id="avgScore">—</strong><span>Avg Score</span></div>
+      </div>
+    </header>
+
+    <div class="updated">Last updated: <span id="lastUpdated">—</span></div>
+
+    <div class="filters">
+      <input type="text" id="searchInput" placeholder="Search title, company, location...">
+      <select id="sourceFilter"><option value="">All Sources</option></select>
+      <select id="locationFilter"><option value="">All Locations</option></select>
+      <select id="sortFilter">
+        <option value="score">Sort by Score ↓</option>
+        <option value="date">Sort by Date ↓</option>
+        <option value="company">Sort by Company</option>
+      </select>
+    </div>
+
+    <div id="loading" class="loading">Loading matches...</div>
+    <div id="noJobs" class="no-jobs" style="display:none;">
+      <h3>No matches found</h3>
+      <p>Try adjusting your filters or check back later.</p>
+    </div>
+    <div id="jobList"></div>
+  </div>
+
+  <script>
+    let allJobs = [];
+
+    async function loadMatches() {
+      try {
+        const resp = await fetch('matches.txt');
+        if (!resp.ok) throw new Error('Failed to load matches.txt');
+        const text = await resp.text();
+        parseMatches(text);
+      } catch (e) {
+        console.error(e);
+        document.getElementById('loading').textContent = 'Failed to load matches. Check if matches.txt exists.';
+      }
+    }
+
+    function parseMatches(text) {
+      const lines = text.split('\n');
+      let currentJob = null;
+      const jobs = [];
+
+      for (const line of lines) {
+        // Header line with score and title: [0.45] Company — Title
+        const headerMatch = line.match(/^\[(\d+\.\d+)\]\s+(.+?)\s+—\s+(.+)$/);
+        if (headerMatch) {
+          if (currentJob) jobs.push(currentJob);
+          currentJob = {
+            score: parseFloat(headerMatch[1]),
+            company: headerMatch[2].trim(),
+            title: headerMatch[3].trim(),
+            location: '',
+            source: '',
+            link: '',
+            reason: '',
+            description: '',
+          };
+          continue;
+        }
+
+        if (!currentJob) continue;
+
+        if (line.startsWith('  Location:')) currentJob.location = line.replace('  Location:', '').trim();
+        else if (line.startsWith('  Source:')) currentJob.source = line.replace('  Source:', '').trim();
+        else if (line.startsWith('  Why:')) currentJob.reason = line.replace('  Why:', '').trim();
+        else if (line.startsWith('  Link:')) currentJob.link = line.replace('  Link:', '').trim();
+        else if (line.startsWith('Matched jobs — updated')) {
+          document.getElementById('lastUpdated').textContent = line.replace('Matched jobs — updated', '').trim();
+        }
+      }
+      if (currentJob) jobs.push(currentJob);
+
+      allJobs = jobs;
+      updateStats();
+      populateFilters();
+      renderJobs();
+    }
+
+    function updateStats() {
+      document.getElementById('totalCount').textContent = allJobs.length;
+      const sources = new Set(allJobs.map(j => j.source)).size;
+      document.getElementById('sourceCount').textContent = sources;
+      const avg = allJobs.length ? (allJobs.reduce((a, j) => a + j.score, 0) / allJobs.length).toFixed(2) : 0;
+      document.getElementById('avgScore').textContent = avg;
+    }
+
+    function populateFilters() {
+      const sources = [...new Set(allJobs.map(j => j.source))].sort();
+      const locations = [...new Set(allJobs.map(j => j.location))].sort();
+      
+      const sourceFilter = document.getElementById('sourceFilter');
+      sources.forEach(s => sourceFilter.add(new Option(s, s)));
+      
+      const locationFilter = document.getElementById('locationFilter');
+      locations.forEach(l => locationFilter.add(new Option(l, l)));
+    }
+
+    function filterAndSortJobs() {
+      let jobs = [...allJobs];
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const source = document.getElementById('sourceFilter').value;
+      const location = document.getElementById('locationFilter').value;
+      const sort = document.getElementById('sortFilter').value;
+
+      if (search) {
+        jobs = jobs.filter(j => 
+          j.title.toLowerCase().includes(search) ||
+          j.company.toLowerCase().includes(search) ||
+          j.location.toLowerCase().includes(search)
+        );
+      }
+      if (source) jobs = jobs.filter(j => j.source === source);
+      if (location) jobs = jobs.filter(j => j.location === location);
+
+      switch (sort) {
+        case 'score': jobs.sort((a, b) => b.score - a.score); break;
+        case 'company': jobs.sort((a, b) => a.company.localeCompare(b.company)); break;
+      }
+      return jobs;
+    }
+
+    function renderJobs() {
+      const jobs = filterAndSortJobs();
+      const list = document.getElementById('jobList');
+      const noJobs = document.getElementById('noJobs');
+      const loading = document.getElementById('loading');
+
+      loading.style.display = 'none';
+      
+      if (jobs.length === 0) {
+        noJobs.style.display = 'block';
+        list.innerHTML = '';
+        return;
+      }
+      noJobs.style.display = 'none';
+
+      list.innerHTML = jobs.map(job => `
+        <div class="job-card">
+          <div class="job-header">
+            <div class="job-title">${escapeHtml(job.title)}</div>
+            <div class="job-score">${(job.score * 100).toFixed(0)}%</div>
+          </div>
+          <div class="job-meta">
+            <span><strong>${escapeHtml(job.company)}</strong></span>
+            <span>📍 ${escapeHtml(job.location)}</span>
+            <span>📌 ${escapeHtml(job.source)}</span>
+          </div>
+          ${job.reason ? `<div class="job-description"><strong>Why:</strong> ${escapeHtml(job.reason)}</div>` : ''}
+          <div class="job-footer">
+            <a href="${escapeHtml(job.link)}" target="_blank" rel="noopener" class="job-link">View & Apply</a>
+            <span class="job-source">${escapeHtml(job.source)}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Event listeners
+    document.getElementById('searchInput').addEventListener('input', renderJobs);
+    document.getElementById('sourceFilter').addEventListener('change', renderJobs);
+    document.getElementById('locationFilter').addEventListener('change', renderJobs);
+    document.getElementById('sortFilter').addEventListener('change', renderJobs);
+
+    // Load on page load
+    loadMatches();
+  </script>
+</body>
+</html>
